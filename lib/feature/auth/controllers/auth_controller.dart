@@ -1,10 +1,14 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'package:us_connector/main.dart';
 import '../../../core/routes/routes.dart';
 
 class AuthController extends GetxController {
@@ -35,15 +39,33 @@ class AuthController extends GetxController {
 
     try {
       isLoading.value = true;
-      // Add your login logic here
-      await Future.delayed(const Duration(seconds: 2)); // Simulate API call
-      NavigationHelper.goToHome();
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to sign in. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
+
+      final response = await supabase.auth.signInWithPassword(
+        email: emailController.text,
+        password: passwordController.text,
       );
+
+      final user = response.user;
+      if (user == null) {
+        throw 'Login failed. Please try again.';
+      }
+
+      final userProfile = await supabase
+          .from('user_profiles')
+          .select()
+          .eq('email', user.email ?? '')
+          .maybeSingle();
+
+      if (userProfile == null) {
+        await supabase.from('user_profiles').insert({
+          'email': user.email,
+          'username': user.userMetadata?['username'],
+        });
+      }
+
+      Get.offAllNamed(Routes.home);
+    } catch (e) {
+      Get.snackbar('Error', e.toString(), snackPosition: SnackPosition.BOTTOM);
     } finally {
       isLoading.value = false;
     }
@@ -91,17 +113,12 @@ class AuthController extends GetxController {
 
   // Signup Methods
   Future<void> signupWithGoogle() async {
-    if (!_validateSignupInputs()) return;
-
     try {
       isLoading.value = true;
 
       final response = await Supabase.instance.client.auth.signUp(
         email: emailController.text,
         password: passwordController.text,
-        data: {
-          'username': nameController.text,
-        },
       );
 
       if (response.user != null) {
@@ -109,13 +126,50 @@ class AuthController extends GetxController {
       } else {
         throw Exception('Failed to sign up');
       }
-
     } catch (e) {
       Get.snackbar(
         'Error',
         'Failed to sign up. Please try again.',
         snackPosition: SnackPosition.BOTTOM,
       );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> signUp() async {
+    if (!_validateSignupInputs()) return;
+
+    try {
+      isLoading.value = true;
+
+      final response = await supabase.auth.signUp(
+        email: emailController.text,
+        password: passwordController.text,
+        data: {'username': nameController.text},
+      );
+
+      if (response != null) {
+        throw response;
+      }
+
+      if (response.user?.identities?.isEmpty ?? true) {
+        throw 'User with this email already exists';
+      }
+
+      if (response.session != null) {
+        Get.toNamed(Routes.home);
+      } else {
+        Get.snackbar(
+          'Success',
+          'Please check your email to verify your account',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      Get.snackbar('Error', e.toString(), snackPosition: SnackPosition.BOTTOM);
     } finally {
       isLoading.value = false;
     }
@@ -202,30 +256,65 @@ class AuthController extends GetxController {
   }
 
   // Social Auth Methods
+  StreamSubscription? _sub;
+
   Future<void> signInWithGoogle() async {
+    /// TODO: update the Web client ID with your own.
+    ///
+    /// Web Client ID that you registered with Google Cloud.
+    const webClientId =
+        '117669178530-m7i284g3857t4f3ol9e2vo7j9v38h0af.apps.googleusercontent.com';
+
+    /// TODO: update the iOS client ID with your own.
+    ///
+    /// iOS Client ID that you registered with Google Cloud.
+    const iosClientId =
+        '117669178530-b37fu5du424kf8q4gmjnee5c5stqnd1q.apps.googleusercontent.com';
+
+    // Google sign in on Android will work without providing the Android
+    // Client ID registered on Google Cloud.
+
+    final GoogleSignIn googleSignIn = GoogleSignIn(
+      clientId: iosClientId,
+      serverClientId: webClientId,
+    );
+    final googleUser = await googleSignIn.signIn();
+    final googleAuth = await googleUser!.authentication;
+    final accessToken = googleAuth.accessToken;
+    final idToken = googleAuth.idToken;
+
+    if (accessToken == null) {
+      throw 'No Access Token found.';
+    }
+    if (idToken == null) {
+      throw 'No ID Token found.';
+    }
+
+    Get.offAllNamed(Routes.home);
+  }
+
+  Future<void> signInWithApple() async {
     try {
       isLoading.value = true;
-
-      // Sign in with Supabase Google OAuth
       final response = await Supabase.instance.client.auth.signInWithOAuth(
-        OAuthProvider.google,
-        redirectTo: kIsWeb 
-          ? null 
-          : Platform.isAndroid
-            ? '117669178530-gpcq5ohgo1up86tk3psv61e91qfoqlce.apps.googleusercontent.com'
-            : 'https://hdwfpfxyzubfksctezkz.supabase.co/auth/v1/callback',
+        OAuthProvider.apple,
+        redirectTo: kIsWeb
+            ? null
+            : Platform.isAndroid
+            ? 'us-connector://login-callback'
+            : 'us.connector://login-callback',
+        authScreenLaunchMode: LaunchMode.inAppWebView,
       );
 
       if (!response) {
-        throw 'Google sign in failed';
+        throw 'Apple sign in failed';
       }
 
-      // Navigate to home on success
       NavigationHelper.goToHome();
     } catch (e) {
       Get.snackbar(
         'Error',
-        'Failed to sign in with Google. Please try again.',
+        'Failed to sign in with Apple. Please try again.',
         snackPosition: SnackPosition.BOTTOM,
       );
     } finally {
@@ -233,16 +322,27 @@ class AuthController extends GetxController {
     }
   }
 
-  Future<void> signInWithApple() async {
+  Future<void> signInWithGithub() async {
     try {
       isLoading.value = true;
-      // Add your Apple sign-in logic here
-      await Future.delayed(const Duration(seconds: 2)); // Simulate API call
+      final response = await Supabase.instance.client.auth.signInWithOAuth(
+        OAuthProvider.github,
+        redirectTo: kIsWeb
+            ? null
+            : Platform.isAndroid
+            ? '117669178530-gpcq5ohgo1up86tk3psv61e91qfoqlce.apps.googleusercontent.com'
+            : 'https://hdwfpfxyzubfksctezkz.supabase.co/auth/v1/callback',
+      );
+
+      if (!response) {
+        throw 'Github sign in failed';
+      }
+
       NavigationHelper.goToHome();
     } catch (e) {
       Get.snackbar(
         'Error',
-        'Failed to sign in with Apple. Please try again.',
+        'Failed to sign in with Github. Please try again.',
         snackPosition: SnackPosition.BOTTOM,
       );
     } finally {

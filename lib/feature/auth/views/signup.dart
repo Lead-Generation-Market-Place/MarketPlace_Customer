@@ -240,7 +240,7 @@ class SignupView extends GetView<AuthController> {
         CustomButton(
           text: 'Create Account',
           isLoading: controller.isLoading.value,
-          onPressed: () => controller.signupWithGoogle(),
+          onPressed: () => controller.signUp(),
           size: CustomButtonSize.large,
           isFullWidth: true,
         ),
