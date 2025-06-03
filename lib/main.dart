@@ -55,7 +55,6 @@ Future<void> initServices() async {
     // Initialize Theme Controller last since it depends on SharedPreferences
     final themeController = Get.put(ThemeController(), permanent: true);
     await themeController.initTheme();
-
   } catch (e, stackTrace) {
     debugPrint('Initialization Error: $e');
     debugPrint('Stack Trace: $stackTrace');
@@ -81,9 +80,6 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
 
-
-
-
   @override
   Widget build(BuildContext context) {
     final themeController = Get.find<ThemeController>();
@@ -108,7 +104,7 @@ class MyApp extends StatelessWidget {
       getPages: AppPages.pages,
       defaultTransition: Transition.fade,
       navigatorObservers: [Get.put(RouteObserver<Route>())],
-      
+
       // Global Error Handling
       onUnknownRoute: (settings) {
         return GetPageRoute(
@@ -202,7 +198,7 @@ class MyApp extends StatelessWidget {
         if (routing?.current != null) {
           // Log navigation
           debugPrint('Navigation: ${routing?.previous} -> ${routing?.current}');
-          
+
           // Implement analytics page tracking
           _trackScreenView(routing!.current!);
         }
