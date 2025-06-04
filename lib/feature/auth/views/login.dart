@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:us_connector/core/constants/app_colors.dart';
 import 'package:us_connector/core/routes/routes.dart';
 import 'package:us_connector/core/widgets/custom_button.dart';
+import 'package:us_connector/core/widgets/custom_input.dart';
 import 'package:us_connector/core/widgets/foldable_widgets.dart';
 import 'package:us_connector/feature/auth/controllers/auth_controller.dart';
 
@@ -11,6 +12,10 @@ class LoginView extends GetView<AuthController> {
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      controller.emailController.clear();
+      controller.passwordController.clear();
+    });
     return Scaffold(
       backgroundColor: AppColors.background,
       body: ResponsiveLayout(
@@ -148,91 +153,140 @@ class LoginView extends GetView<AuthController> {
         const SizedBox(height: 8),
         Text(
           'Sign in to continue',
-          style: TextStyle(
-            color: AppColors.textSecondary,
-            fontSize: 16,
-          ),
+          style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
         ),
       ],
     );
   }
 
   Widget _buildLoginForm() {
-    return Obx(() => Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        // Email Field
-        _buildTextField(
-          label: 'Email',
-          hint: 'Enter your email',
-          controller: controller.emailController,
-          keyboardType: TextInputType.emailAddress,
-          prefixIcon: Icons.email_outlined,
-        ),
-        const SizedBox(height: 16),
-        
-        // Password Field
-        _buildTextField(
-          label: 'Password',
-          hint: 'Enter your password',
-          controller: controller.passwordController,
-          isPassword: true,
-          prefixIcon: Icons.lock_outline,
-        ),
-        const SizedBox(height: 8),
-        
-        // Forgot Password
-        Align(
-          alignment: Alignment.centerRight,
-          child: TextButton(
-            onPressed: () => controller.onForgotPassword(),
-            child: Text(
-              'Forgot Password?',
-              style: TextStyle(
-                color: AppColors.primaryBlue,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+    return Obx(
+      () => Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Email Field
+          CustomInput(
+            label: 'Email',
+            hint: 'Enter your email',
+            controller: controller.emailController,
+            keyboardType: TextInputType.emailAddress,
+            prefixIcon: Icon(Icons.email_outlined),
+            errorText: controller.emailError.value,
+            onChanged: (value) {
+              if (value.isEmpty) {
+                controller.emailError.value = 'Email is required';
+              } else if (!GetUtils.isEmail(value)) {
+                controller.emailError.value = 'Please enter a valid email';
+              } else {
+                controller.emailError.value = null;
+              }
+            },
           ),
-        ),
-        const SizedBox(height: 24),
-        
-        // Login Button
-        CustomButton(
-          text: 'Sign In',
-          isLoading: controller.isLoading.value,
-          onPressed: () => controller.login(),
-          size: CustomButtonSize.large,
-          isFullWidth: true,
-        ),
-        const SizedBox(height: 24),
-        
-        // Social Login
-        _buildSocialLogin(),
-        const SizedBox(height: 24),
-        
-        // Register Link
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Don\'t have an account? ',
-              style: TextStyle(color: AppColors.textSecondary),
-            ),
-            TextButton(
-              onPressed: () => controller.goToSignup(),
+          const SizedBox(height: 16),
+
+          // Password Field
+          CustomInput(
+            label: 'Password',
+            hint: 'Enter your password',
+            controller: controller.passwordController,
+            type: CustomInputType.password,
+            prefixIcon: Icon(Icons.lock_outline),
+            errorText: controller.passwordError.value,
+            onChanged: (value) {
+              if (value.isEmpty) {
+                controller.passwordError.value = 'Password is required';
+              } else if (value.length < 6) {
+                controller.passwordError.value = 'Password must be at least 6 characters';
+              } else {
+                controller.passwordError.value = null;
+              }
+            },
+          ),
+          const SizedBox(height: 8),
+
+          // Forgot Password
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton(
+              onPressed: () => {Get.toNamed(Routes.resetPassword)},
               child: Text(
-                'Register',
+                'Forgot Password?',
                 style: TextStyle(
                   color: AppColors.primaryBlue,
                   fontWeight: FontWeight.w600,
                 ),
               ),
             ),
-          ],
-        ),
-      ],
-    ));
+          ),
+          const SizedBox(height: 24),
+
+          // Login Button
+          CustomButton(
+            text: 'Sign In',
+            isLoading: controller.isLoading.value,
+            onPressed: () {
+              // Clear any previous errors
+              controller.emailError.value = null;
+              controller.passwordError.value = null;
+
+              // Validate before login
+              bool isValid = true;
+              
+              final email = controller.emailController.text;
+              if (email.isEmpty) {
+                controller.emailError.value = 'Email is required';
+                isValid = false;
+              } else if (!GetUtils.isEmail(email)) {
+                controller.emailError.value = 'Please enter a valid email';
+                isValid = false;
+              }
+
+              final password = controller.passwordController.text;
+              if (password.isEmpty) {
+                controller.passwordError.value = 'Password is required';
+                isValid = false;
+              } else if (password.length < 6) {
+                controller.passwordError.value = 'Password must be at least 6 characters';
+                isValid = false;
+              }
+
+              // Only proceed with login if validation passes
+              if (isValid) {
+                controller.login();
+              }
+            },
+            size: CustomButtonSize.large,
+            isFullWidth: true,
+          ),
+          const SizedBox(height: 24),
+
+          // Social Login
+          _buildSocialLogin(),
+          const SizedBox(height: 24),
+
+          // Register Link
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'Don\'t have an account? ',
+                style: TextStyle(color: AppColors.textSecondary),
+              ),
+              TextButton(
+                onPressed: () => controller.goToSignup(),
+                child: Text(
+                  'Register',
+                  style: TextStyle(
+                    color: AppColors.primaryBlue,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildTextField({
@@ -241,7 +295,7 @@ class LoginView extends GetView<AuthController> {
     required TextEditingController controller,
     bool isPassword = false,
     TextInputType? keyboardType,
-    IconData? prefixIcon,
+    IconData? prefixIcon, required type,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -312,14 +366,11 @@ class LoginView extends GetView<AuthController> {
               icon: 'assets/images/google.png',
               onPressed: () => controller.signInWithGoogle(),
             ),
-            _buildSocialButton(
-              icon: 'assets/icons/apple.png',
-              onPressed: () => controller.signInWithApple(),
-            ),
-            _buildSocialButton(
-              icon: 'assets/icons/apple.png',
-              onPressed: () => Get.toNamed(Routes.home),
-            ),
+
+            // _buildSocialButton(
+            //   icon: 'assets/images/github_icon.png',
+            //   onPressed: () => controller.signInWithGithub(),
+            // ),
           ],
         ),
       ],
@@ -341,15 +392,11 @@ class LoginView extends GetView<AuthController> {
             border: Border.all(color: AppColors.neutral200),
             borderRadius: BorderRadius.circular(12),
           ),
-          child: Icon(
-            Icons.apple,
-            size: 24,
-            color: AppColors.textPrimary,
-          ),
+          child: Icon(Icons.apple, size: 24, color: AppColors.textPrimary),
         ),
       );
     }
-    
+
     // For other icons (like Google), use the asset image
     return InkWell(
       onTap: onPressed,
@@ -360,11 +407,7 @@ class LoginView extends GetView<AuthController> {
           border: Border.all(color: AppColors.neutral200),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Image.asset(
-          icon,
-          height: 24,
-          width: 24,
-        ),
+        child: Image.asset(icon, height: 24, width: 24),
       ),
     );
   }

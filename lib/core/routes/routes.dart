@@ -1,6 +1,8 @@
 import 'package:get/get.dart';
 import 'package:flutter/material.dart';
 import 'package:us_connector/feature/auth/views/login.dart';
+import 'package:us_connector/feature/auth/views/reset_password.dart';
+import 'package:us_connector/feature/auth/views/reset_password_token.dart';
 import 'package:us_connector/feature/auth/views/signup.dart';
 import 'package:us_connector/feature/home/views/home_view.dart';
 import 'package:us_connector/feature/inbox/views/inbox_view.dart';
@@ -13,8 +15,6 @@ import '../../feature/splash/controllers/splash_controller.dart';
 import '../../feature/one_time_initial_view/views/one_time_initial_view.dart';
 import '../../feature/one_time_initial_view/controllers/one_time_initial_controller.dart';
 import '../../feature/auth/controllers/auth_binding.dart';
-
-
 
 // Route Names
 abstract class Routes {
@@ -29,6 +29,8 @@ abstract class Routes {
   static const plan = '/plan';
   static const inbox = '/inbox';
   static const team = '/team';
+  static const resetPassword = '/reset-password';
+  static const resetPasswordToken = '/reset-password-token';
 }
 
 // Middleware
@@ -65,7 +67,7 @@ abstract class AppPages {
       }),
       transition: Transition.fade,
     ),
-    
+
     GetPage(
       name: Routes.onboarding,
       page: () => const OneTimeInitialView(),
@@ -83,7 +85,7 @@ abstract class AppPages {
       middlewares: [NoAuthMiddleware()],
       transition: Transition.fadeIn,
     ),
-    
+
     GetPage(
       name: Routes.signup,
       page: () => SignupView(),
@@ -114,7 +116,7 @@ abstract class AppPages {
 
     GetPage(
       name: Routes.search,
-      page: () =>SearchView(),
+      page: () => SearchView(),
       middlewares: [AuthMiddleware()],
       transition: Transition.downToUp,
     ),
@@ -144,6 +146,19 @@ abstract class AppPages {
       middlewares: [AuthMiddleware()],
       transition: Transition.fadeIn,
     ),
+
+    GetPage(
+      name: Routes.resetPassword,
+      page: () => ResetPassword(),
+      binding: AuthBinding(),
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: Routes.resetPasswordToken,
+      page: () => ResetPasswordToken(),
+      binding: AuthBinding(),
+      transition: Transition.fadeIn,
+    ),
   ];
 }
 
@@ -156,9 +171,9 @@ class NavigationHelper {
   static void goToSettings() => Get.toNamed(Routes.settings);
   static void goToSearch() => Get.toNamed(Routes.search);
   static void goTotasks() => Get.toNamed(Routes.plan);
-  
+
   static void goBack() => Get.back();
-  
+
   static void logout() {
     // Add your logout logic here
     goToLogin();

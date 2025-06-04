@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:us_connector/core/routes/routes.dart';
 import 'package:us_connector/core/widgets/bottom_navbar.dart';
 import 'package:us_connector/feature/home/controllers/home_controller.dart';
 import 'package:us_connector/core/widgets/app_bar.dart';
@@ -19,7 +20,7 @@ class HomeView extends GetView<HomeController> {
               IconButton(
                 icon: const Icon(Icons.person_outline),
                 onPressed: () {
-                  // TODO: Implement profile action
+                 Get.toNamed(Routes.settings);
                 },
               ),
             ],

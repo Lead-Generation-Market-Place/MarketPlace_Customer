@@ -104,11 +104,12 @@ class CustomButton extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            icon,
+            icon!,
             size: iconSize,
             color: textStyle.color,
           ),
-          const SizedBox(width: 8),
+          if (text.isNotEmpty)
+            const SizedBox(width: 8),
           Text(text, style: textStyle),
         ],
       );
@@ -189,11 +190,11 @@ class CustomButton extends StatelessWidget {
   double _getLoaderSize() {
     switch (size) {
       case CustomButtonSize.small:
-        return 16;
-      case CustomButtonSize.medium:
         return 24;
+      case CustomButtonSize.medium:
+        return 36;
       case CustomButtonSize.large:
-        return 32;
+        return 48;
     }
   }
 }
