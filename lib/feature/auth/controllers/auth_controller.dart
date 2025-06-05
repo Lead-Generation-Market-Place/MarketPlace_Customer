@@ -170,38 +170,55 @@ class AuthController extends GetxController {
   StreamSubscription? _sub;
 
   Future<void> signInWithGoogle() async {
-    /// TODO: update the Web client ID with your own.
-    ///
-    /// Web Client ID that you registered with Google Cloud.
-    const webClientId =
-        '117669178530-m7i284g3857t4f3ol9e2vo7j9v38h0af.apps.googleusercontent.com';
+    try {
+      await supabase.auth.signOut();
+      /// TODO: update the Web client ID with your own.
+      ///
+      /// Web Client ID that you registered with Google Cloud.
+      const webClientId =
+          '117669178530-m7i284g3857t4f3ol9e2vo7j9v38h0af.apps.googleusercontent.com';
 
-    /// TODO: update the iOS client ID with your own.
-    ///
-    /// iOS Client ID that you registered with Google Cloud.
-    const iosClientId =
-        '117669178530-b37fu5du424kf8q4gmjnee5c5stqnd1q.apps.googleusercontent.com';
+      /// TODO: update the iOS client ID with your own.
+      ///
+      /// iOS Client ID that you registered with Google Cloud.
+      const iosClientId =
+          '117669178530-b37fu5du424kf8q4gmjnee5c5stqnd1q.apps.googleusercontent.com';
 
-    // Google sign in on Android will work without providing the Android
-    // Client ID registered on Google Cloud.
+      // Google sign in on Android will work without providing the Android
+      // Client ID registered on Google Cloud.
 
-    final GoogleSignIn googleSignIn = GoogleSignIn(
-      clientId: iosClientId,
-      serverClientId: webClientId,
-    );
-    final googleUser = await googleSignIn.signIn();
-    final googleAuth = await googleUser!.authentication;
-    final accessToken = googleAuth.accessToken;
-    final idToken = googleAuth.idToken;
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        clientId: iosClientId,
+        serverClientId: webClientId,
+        // Force select account to show account picker every time
+        forceCodeForRefreshToken: true,
+        // Clear cached credentials to show account picker
+        signInOption: SignInOption.standard,
+      );
 
-    if (accessToken == null) {
-      throw 'No Access Token found.';
+      // Sign out from Google first to clear any cached credentials
+      await googleSignIn.signOut();
+      
+      final googleUser = await googleSignIn.signIn();
+      final googleAuth = await googleUser!.authentication;
+      final accessToken = googleAuth.accessToken;
+      final idToken = googleAuth.idToken;
+
+      if (accessToken == null) {
+        throw 'No Access Token found.';
+      }
+      if (idToken == null) {
+        throw 'No ID Token found.';
+      }
+
+      Get.offAllNamed(Routes.home);
+    } catch (e) {
+      Fluttertoast.showToast(
+        msg: 'Failed to sign in with Google. Please try again.',
+      );
+    } finally {
+      isLoading.value = false;
     }
-    if (idToken == null) {
-      throw 'No ID Token found.';
-    }
-
-    Get.offAllNamed(Routes.home);
   }
 
   Future<void> signInWithApple() async {
