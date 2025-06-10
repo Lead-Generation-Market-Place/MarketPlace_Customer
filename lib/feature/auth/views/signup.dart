@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:us_connector/core/constants/app_colors.dart';
+import 'package:us_connector/core/routes/routes.dart';
 import 'package:us_connector/core/widgets/custom_button.dart';
+import 'package:us_connector/core/widgets/custom_input.dart';
 import 'package:us_connector/core/widgets/foldable_widgets.dart';
 import 'package:us_connector/feature/auth/controllers/auth_controller.dart';
 
@@ -10,6 +12,12 @@ class SignupView extends GetView<AuthController> {
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      controller.nameController.clear();
+      controller.emailController.clear();
+      controller.passwordController.clear();
+      controller.confirmPasswordController.clear();
+    });
     return Scaffold(
       backgroundColor: AppColors.background,
       body: ResponsiveLayout(
@@ -161,77 +169,144 @@ class SignupView extends GetView<AuthController> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         // Full Name Field
-        _buildTextField(
+        CustomInput(
           label: 'Full Name',
           hint: 'Enter your full name',
           controller: controller.nameController,
-          prefixIcon: Icons.person_outline,
+          prefixIcon: Icon(Icons.person_outline),
+          errorText: controller.nameError.value,
+          onChanged: (value) {
+            if (value.isEmpty) {
+              controller.nameError.value = 'Full name is required';
+            } else if (value.length < 2) {
+              controller.nameError.value = 'Name must be at least 2 characters';
+            } else {
+              controller.nameError.value = null;
+            }
+          },
         ),
         const SizedBox(height: 16),
 
         // Email Field
-        _buildTextField(
+        CustomInput(
           label: 'Email',
           hint: 'Enter your email',
           controller: controller.emailController,
           keyboardType: TextInputType.emailAddress,
-          prefixIcon: Icons.email_outlined,
+          prefixIcon: Icon(Icons.email_outlined),
+          errorText: controller.emailError.value,
+          onChanged: (value) {
+            if (value.isEmpty) {
+              controller.emailError.value = 'Email is required';
+            } else if (!GetUtils.isEmail(value)) {
+              controller.emailError.value = 'Please enter a valid email';
+            } else {
+              controller.emailError.value = null;
+            }
+          },
         ),
         const SizedBox(height: 16),
         
         // Password Field
-        _buildTextField(
+        CustomInput(
           label: 'Password',
           hint: 'Create a password',
           controller: controller.passwordController,
-          isPassword: true,
-          prefixIcon: Icons.lock_outline,
+          type: CustomInputType.password,
+          prefixIcon: Icon(Icons.lock_outline),
+          errorText: controller.passwordError.value,
+          onChanged: (value) {
+            if (value.isEmpty) {
+              controller.passwordError.value = 'Password is required';
+            } else if (value.length < 6) {
+              controller.passwordError.value = 'Password must be at least 6 characters';
+            } else {
+              controller.passwordError.value = null;
+            }
+            // Also validate confirm password if it's not empty
+            if (controller.confirmPasswordController.text.isNotEmpty) {
+              if (value != controller.confirmPasswordController.text) {
+                controller.confirmPasswordError.value = 'Passwords do not match';
+              } else {
+                controller.confirmPasswordError.value = null;
+              }
+            }
+          },
         ),
         const SizedBox(height: 16),
 
         // Confirm Password Field
-        _buildTextField(
+        CustomInput(
           label: 'Confirm Password',
           hint: 'Confirm your password',
           controller: controller.confirmPasswordController,
-          isPassword: true,
-          prefixIcon: Icons.lock_outline,
+          type: CustomInputType.password,
+          prefixIcon: Icon(Icons.lock_outline),
+          errorText: controller.confirmPasswordError.value,
+          onChanged: (value) {
+            if (value.isEmpty) {
+              controller.confirmPasswordError.value = 'Please confirm your password';
+            } else if (value != controller.passwordController.text) {
+              controller.confirmPasswordError.value = 'Passwords do not match';
+            } else {
+              controller.confirmPasswordError.value = null;
+            }
+          },
         ),
         const SizedBox(height: 24),
 
         // Terms and Conditions
-        Row(
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Obx(() => Checkbox(
-              value: controller.acceptedTerms.value,
-              onChanged: (value) => controller.acceptedTerms.value = value ?? false,
-              activeColor: AppColors.primaryBlue,
-            )),
-            Expanded(
-              child: RichText(
-                text: TextSpan(
-                  style: TextStyle(color: AppColors.textSecondary),
-                  children: [
-                    const TextSpan(text: 'I agree to the '),
-                    TextSpan(
-                      text: 'Terms of Service',
-                      style: TextStyle(
-                        color: AppColors.primaryBlue,
-                        fontWeight: FontWeight.w600,
-                      ),
+            Row(
+              children: [
+                Checkbox(
+                  value: controller.acceptedTerms.value,
+                  onChanged: (value) {
+                    controller.acceptedTerms.value = value ?? false;
+                    controller.termsError.value = null;
+                  },
+                  activeColor: AppColors.primaryBlue,
+                ),
+                Expanded(
+                  child: RichText(
+                    text: TextSpan(
+                      style: TextStyle(color: AppColors.textSecondary),
+                      children: [
+                        const TextSpan(text: 'I agree to the '),
+                        TextSpan(
+                          text: 'Terms of Service',
+                          style: TextStyle(
+                            color: AppColors.primaryBlue,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const TextSpan(text: ' and '),
+                        TextSpan(
+                          text: 'Privacy Policy',
+                          style: TextStyle(
+                            color: AppColors.primaryBlue,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
                     ),
-                    const TextSpan(text: ' and '),
-                    TextSpan(
-                      text: 'Privacy Policy',
-                      style: TextStyle(
-                        color: AppColors.primaryBlue,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
+                  ),
+                ),
+              ],
+            ),
+            if (controller.termsError.value != null)
+              Padding(
+                padding: const EdgeInsets.only(left: 12, top: 4),
+                child: Text(
+                  controller.termsError.value!,
+                  style: TextStyle(
+                    color: AppColors.error,
+                    fontSize: 12,
+                  ),
                 ),
               ),
-            ),
           ],
         ),
         const SizedBox(height: 24),
@@ -240,14 +315,71 @@ class SignupView extends GetView<AuthController> {
         CustomButton(
           text: 'Create Account',
           isLoading: controller.isLoading.value,
-          onPressed: () => controller.signupWithGoogle(),
+          onPressed: () {
+            // Clear previous errors
+            controller.nameError.value = null;
+            controller.emailError.value = null;
+            controller.passwordError.value = null;
+            controller.confirmPasswordError.value = null;
+            controller.termsError.value = null;
+
+            // Validate all fields
+            bool isValid = true;
+
+            // Validate name
+            if (controller.nameController.text.isEmpty) {
+              controller.nameError.value = 'Full name is required';
+              isValid = false;
+            } else if (controller.nameController.text.length < 2) {
+              controller.nameError.value = 'Name must be at least 2 characters';
+              isValid = false;
+            }
+
+            // Validate email
+            if (controller.emailController.text.isEmpty) {
+              controller.emailError.value = 'Email is required';
+              isValid = false;
+            } else if (!GetUtils.isEmail(controller.emailController.text)) {
+              controller.emailError.value = 'Please enter a valid email';
+              isValid = false;
+            }
+
+            // Validate password
+            if (controller.passwordController.text.isEmpty) {
+              controller.passwordError.value = 'Password is required';
+              isValid = false;
+            } else if (controller.passwordController.text.length < 6) {
+              controller.passwordError.value = 'Password must be at least 6 characters';
+              isValid = false;
+            }
+
+            // Validate confirm password
+            if (controller.confirmPasswordController.text.isEmpty) {
+              controller.confirmPasswordError.value = 'Please confirm your password';
+              isValid = false;
+            } else if (controller.confirmPasswordController.text != controller.passwordController.text) {
+              controller.confirmPasswordError.value = 'Passwords do not match';
+              isValid = false;
+            }
+
+            // Validate terms acceptance
+            if (!controller.acceptedTerms.value) {
+              controller.termsError.value = 'Please accept the Terms and Privacy Policy';
+              isValid = false;
+            }
+
+            // Only proceed with signup if all validations pass
+            if (isValid) {
+              controller.signUp();
+            }
+          },
           size: CustomButtonSize.large,
           isFullWidth: true,
         ),
         const SizedBox(height: 24),
         
         // Social Login
-        _buildSocialLogin(),
+        // _buildSocialLogin(),
         const SizedBox(height: 24),
         
         // Login Link
@@ -259,7 +391,7 @@ class SignupView extends GetView<AuthController> {
               style: TextStyle(color: AppColors.textSecondary),
             ),
             TextButton(
-              onPressed: () => controller.goToLogin(),
+              onPressed: () => Get.toNamed(Routes.login),
               child: Text(
                 'Sign In',
                 style: TextStyle(
@@ -345,15 +477,15 @@ class SignupView extends GetView<AuthController> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildSocialButton(
-              icon: 'assets/images/google.png',
-              onPressed: () => controller.signupWithGoogle(),
-            ),
-            const SizedBox(width: 16),
-            _buildSocialButton(
-              icon: 'assets/icons/apple.png',
-              onPressed: () => controller.signInWithApple(),
-            ),
+            // _buildSocialButton(
+            //   icon: 'assets/images/google.png',
+            //   onPressed: () => controller.signupWithGoogle(),
+            // ),
+            // const SizedBox(width: 16),
+            // _buildSocialButton(
+            //   icon: 'assets/images/github_icon.png',
+            //   onPressed: () => controller.signInWithGithub(),
+            // ),
           ],
         ),
       ],
@@ -364,25 +496,25 @@ class SignupView extends GetView<AuthController> {
     required String icon,
     required VoidCallback onPressed,
   }) {
-    // Check if it's the Apple icon and use Material icon instead
-    if (icon == 'assets/icons/apple.png') {
-      return InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            border: Border.all(color: AppColors.neutral200),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Icon(
-            Icons.apple,
-            size: 24,
-            color: AppColors.textPrimary,
-          ),
-        ),
-      );
-    }
+    // Check if it's the Github icon and use Material icon instead
+    // if (icon == 'assets/images/github_icon.png') {
+    //   return InkWell(
+    //     onTap: onPressed,
+    //     borderRadius: BorderRadius.circular(12),
+    //     child: Container(
+    //       padding: const EdgeInsets.all(16),
+    //       decoration: BoxDecoration(
+    //         border: Border.all(color: AppColors.neutral200),
+    //         borderRadius: BorderRadius.circular(12),
+    //       ),
+    //       child: Icon(
+    //         Icons.code,
+    //         size: 24,
+    //         color: AppColors.textPrimary,
+    //       ),
+    //     ),
+    //   );
+    // }
     
     // For other icons (like Google), use the asset image
     return InkWell(

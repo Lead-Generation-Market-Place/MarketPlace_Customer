@@ -114,7 +114,7 @@ class _CustomInputState extends State<CustomInput> {
     super.initState();
     _controller = widget.controller ?? TextEditingController(text: widget.initialValue);
     _focusNode = widget.focusNode ?? FocusNode();
-    _obscureText = widget.obscureText;
+    _obscureText = widget.type == CustomInputType.password;
     _focusNode.addListener(_handleFocusChange);
   }
 
@@ -136,6 +136,12 @@ class _CustomInputState extends State<CustomInput> {
         _isFocused = _focusNode.hasFocus;
       });
     }
+  }
+
+  void _togglePasswordVisibility() {
+    setState(() {
+      _obscureText = !_obscureText;
+    });
   }
 
   TextInputType _getKeyboardType() {
@@ -186,12 +192,11 @@ class _CustomInputState extends State<CustomInput> {
         icon: Icon(
           _obscureText ? Icons.visibility_off : Icons.visibility,
           color: _isFocused ? AppColors.primaryBlue : AppColors.neutral500,
+          size: 24, // Explicit size for visibility
         ),
-        onPressed: () {
-          setState(() {
-            _obscureText = !_obscureText;
-          });
-        },
+        onPressed: _togglePasswordVisibility,
+        splashRadius: 20, // Smaller splash for better UX
+        tooltip: _obscureText ? 'Show password' : 'Hide password', // Accessibility
       );
     }
 

@@ -1,10 +1,15 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:us_connector/core/widgets/custom_flutter_toast.dart';
+
+import 'package:us_connector/main.dart';
 import '../../../core/routes/routes.dart';
 
 class AuthController extends GetxController {
@@ -19,6 +24,17 @@ class AuthController extends GetxController {
   final acceptedTerms = false.obs;
   final obscurePassword = true.obs;
   final obscureConfirmPassword = true.obs;
+  final emailError = RxnString();
+  final passwordError = RxnString();
+  final nameError = RxnString();
+  final confirmPasswordError = RxnString();
+  final termsError = RxnString();
+
+  // Reset password variables
+  final resetEmailError = RxnString();
+  final resetTokenError = RxnString();
+  final resetPasswordError = RxnString();
+  final resetConfirmPasswordError = RxnString();
 
   @override
   void onClose() {
@@ -30,203 +46,175 @@ class AuthController extends GetxController {
   }
 
   // Login Methods
-  Future<void> login() async {
-    if (!_validateLoginInputs()) return;
-
+  Future<Map<String, dynamic>> login() async {
     try {
       isLoading.value = true;
-      // Add your login logic here
-      await Future.delayed(const Duration(seconds: 2)); // Simulate API call
-      NavigationHelper.goToHome();
-    } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to sign in. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
+
+      final credentials = {
+        'email': emailController.text,
+        'password': passwordController.text,
+      };
+
+      final response = await supabase.auth.signInWithPassword(
+        email: credentials['email'] ?? '',
+        password: credentials['password'] ?? '',
       );
+
+      if (response.session == null) {
+        return {'status': 'Login failed', 'user': null};
+      }
+
+      final userProfile = await supabase
+          .from('users_profiles')
+          .select()
+          .eq('email', credentials['email'] ?? '')
+          .select();
+
+      if (userProfile.isEmpty) {
+        final insertResponse = await supabase.from('users_profiles').insert({
+          'email': response.user?.email,
+          'username': response.user?.userMetadata?['username'],
+        }).select();
+
+        if (insertResponse.isNotEmpty) {
+          return {'status': insertResponse, 'user': null};
+        }
+      }
+
+      Get.offAllNamed(Routes.home);
+      emailController.value = TextEditingValue.empty;
+      passwordController.value = TextEditingValue.empty;
+      return {'status': 'success', 'user': response.user};
+    } catch (e) {
+      Fluttertoast.showToast(msg: 'Failed to login. Please try again. $e');
+      return {'status': e.toString(), 'user': null};
     } finally {
       isLoading.value = false;
     }
   }
 
-  bool _validateLoginInputs() {
-    if (emailController.text.isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Please enter your email',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return false;
-    }
-
-    if (!GetUtils.isEmail(emailController.text)) {
-      Get.snackbar(
-        'Error',
-        'Please enter a valid email',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return false;
-    }
-
-    if (passwordController.text.isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Please enter your password',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return false;
-    }
-
-    if (passwordController.text.length < 6) {
-      Get.snackbar(
-        'Error',
-        'Password must be at least 6 characters',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return false;
-    }
-
-    return true;
-  }
-
-  // Signup Methods
   Future<void> signupWithGoogle() async {
-    if (!_validateSignupInputs()) return;
-
     try {
       isLoading.value = true;
 
       final response = await Supabase.instance.client.auth.signUp(
         email: emailController.text,
         password: passwordController.text,
-        data: {
-          'username': nameController.text,
-        },
       );
 
       if (response.user != null) {
         Get.toNamed(Routes.login);
       } else {
-        throw Exception('Failed to sign up');
+        Fluttertoast.showToast(msg: 'Failed to sign up. Please try again.');
       }
-
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to sign up. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      Fluttertoast.showToast(msg: 'Failed to sign up. Please try again.');
     } finally {
       isLoading.value = false;
     }
   }
 
-  bool _validateSignupInputs() {
-    if (nameController.text.isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Please enter your full name',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return false;
-    }
+  Future<void> signUp() async {
+    try {
+      isLoading.value = true;
 
-    if (emailController.text.isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Please enter your email',
-        snackPosition: SnackPosition.BOTTOM,
+      final response = await supabase.auth.signUp(
+        email: emailController.text,
+        password: passwordController.text,
+        data: {'username': nameController.text},
       );
-      return false;
-    }
 
-    if (!GetUtils.isEmail(emailController.text)) {
-      Get.snackbar(
-        'Error',
-        'Please enter a valid email',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return false;
-    }
+      if (response.user?.identities?.isEmpty ?? true) {
+        Fluttertoast.showToast(msg: 'User with this email already exists');
+      }
 
-    if (passwordController.text.isEmpty) {
-      Get.snackbar(
-        'Error',
-        'Please enter your password',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return false;
-    }
+      // Sign out the user after successful signup
+      await supabase.auth.signOut();
+      emailController.value = TextEditingValue.empty;
+      passwordController.value = TextEditingValue.empty;
+      nameController.value = TextEditingValue.empty;
+      confirmPasswordController.value = TextEditingValue.empty;
 
-    if (passwordController.text.length < 6) {
-      Get.snackbar(
-        'Error',
-        'Password must be at least 6 characters',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return false;
+      Get.toNamed(Routes.login);
+    } catch (e) {
+      Fluttertoast.showToast(msg: 'Failed to sign up. Please try again.');
+    } finally {
+      isLoading.value = false;
     }
-
-    if (confirmPasswordController.text != passwordController.text) {
-      Get.snackbar(
-        'Error',
-        'Passwords do not match',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return false;
-    }
-
-    if (!acceptedTerms.value) {
-      Get.snackbar(
-        'Error',
-        'Please accept the Terms of Service and Privacy Policy',
-        snackPosition: SnackPosition.BOTTOM,
-      );
-      return false;
-    }
-
-    return true;
   }
 
   // Navigation Methods
-  void onForgotPassword() {
-    Get.toNamed('/forgot-password');
+  Future<void> resetPassword(String email) async {
+    try {
+      isLoading.value = true;
+      await supabase.auth.resetPasswordForEmail(email);
+
+   
+      emailController.clear();
+      Fluttertoast.showToast(msg: 'Reset email sent');
+    } catch (e) {
+    
+      emailController.clear();
+      Fluttertoast.showToast(msg: 'Reset email sent');
+    } finally {
+      isLoading.value = false;
+      Fluttertoast.showToast(msg: 'Reset email sent');
+    }
   }
 
   void goToSignup() {
     NavigationHelper.goToSignup();
   }
 
-  void goToLogin() {
-    NavigationHelper.goToLogin();
-  }
-
   // Social Auth Methods
+  StreamSubscription? _sub;
+
   Future<void> signInWithGoogle() async {
     try {
-      isLoading.value = true;
+      await supabase.auth.signOut();
+      /// TODO: update the Web client ID with your own.
+      ///
+      /// Web Client ID that you registered with Google Cloud.
+      const webClientId =
+          '117669178530-m7i284g3857t4f3ol9e2vo7j9v38h0af.apps.googleusercontent.com';
 
-      // Sign in with Supabase Google OAuth
-      final response = await Supabase.instance.client.auth.signInWithOAuth(
-        OAuthProvider.google,
-        redirectTo: kIsWeb 
-          ? null 
-          : Platform.isAndroid
-            ? '117669178530-gpcq5ohgo1up86tk3psv61e91qfoqlce.apps.googleusercontent.com'
-            : 'https://hdwfpfxyzubfksctezkz.supabase.co/auth/v1/callback',
+      /// TODO: update the iOS client ID with your own.
+      ///
+      /// iOS Client ID that you registered with Google Cloud.
+      const iosClientId =
+          '117669178530-b37fu5du424kf8q4gmjnee5c5stqnd1q.apps.googleusercontent.com';
+
+      // Google sign in on Android will work without providing the Android
+      // Client ID registered on Google Cloud.
+
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        clientId: iosClientId,
+        serverClientId: webClientId,
+        // Force select account to show account picker every time
+        forceCodeForRefreshToken: true,
+        // Clear cached credentials to show account picker
+        signInOption: SignInOption.standard,
       );
 
-      if (!response) {
-        throw 'Google sign in failed';
+      // Sign out from Google first to clear any cached credentials
+      await googleSignIn.signOut();
+      
+      final googleUser = await googleSignIn.signIn();
+      final googleAuth = await googleUser!.authentication;
+      final accessToken = googleAuth.accessToken;
+      final idToken = googleAuth.idToken;
+
+      if (accessToken == null) {
+        throw 'No Access Token found.';
+      }
+      if (idToken == null) {
+        throw 'No ID Token found.';
       }
 
-      // Navigate to home on success
-      NavigationHelper.goToHome();
+      Get.offAllNamed(Routes.home);
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to sign in with Google. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
+      Fluttertoast.showToast(
+        msg: 'Failed to sign in with Google. Please try again.',
       );
     } finally {
       isLoading.value = false;
@@ -236,19 +224,74 @@ class AuthController extends GetxController {
   Future<void> signInWithApple() async {
     try {
       isLoading.value = true;
-      // Add your Apple sign-in logic here
-      await Future.delayed(const Duration(seconds: 2)); // Simulate API call
-      NavigationHelper.goToHome();
+      final response = await Supabase.instance.client.auth.signInWithOAuth(
+        OAuthProvider.apple,
+        redirectTo: kIsWeb
+            ? null
+            : Platform.isAndroid
+            ? 'us-connector://login-callback'
+            : 'us.connector://login-callback',
+        authScreenLaunchMode: LaunchMode.inAppWebView,
+      );
+
+      if (!response) {
+        throw 'Apple sign in failed';
+      }
+
+      Get.offAllNamed(Routes.home);
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Failed to sign in with Apple. Please try again.',
-        snackPosition: SnackPosition.BOTTOM,
+      Fluttertoast.showToast(
+        msg: 'Failed to sign in with Apple. Please try again.',
       );
     } finally {
       isLoading.value = false;
     }
   }
+
+  // Future<void> signInWithGithub() async {
+  //   try {
+  //     isLoading.value = true;
+
+  //     // TODO: Update with your GitHub OAuth credentials
+  //     const githubClientId = 'YOUR_GITHUB_CLIENT_ID';
+  //     const githubClientSecret = 'YOUR_GITHUB_CLIENT_SECRET';
+  //     final response = await supabase.auth.signInWithOAuth(
+  //       OAuthProvider.github,
+  //       scopes: 'user:email',
+  //       queryParams: {
+  //         'client_id': githubClientId,
+  //         'client_secret': githubClientSecret
+  //       }
+  //     );
+
+  //     if (!response) {
+  //       throw 'GitHub sign in failed';
+  //     }
+
+  //    final userProfile = await supabase
+  //         .from('users_profiles')
+  //         .select()
+  //         .eq('email', response.user?.email ?? '')
+  //         .select();
+
+  //     if (userProfile == null) {
+  //       await supabase.from('users_profiles').insert({
+  //         'email': response.user?.email,
+  //         'username': response.user?.userMetadata?['user_name'],
+  //       });
+  //     }
+
+  //     Get.offAllNamed(Routes.home);
+  //   } catch (e) {
+  //     Get.snackbar(
+  //       'Error',
+  //       'Failed to sign in with Github. Please try again.',
+  //       snackPosition: SnackPosition.BOTTOM,
+  //     );
+  //   } finally {
+  //     isLoading.value = false;
+  //   }
+  // }
 
   // Terms and Privacy Policy
   void onTermsClick() {
@@ -257,5 +300,37 @@ class AuthController extends GetxController {
 
   void onPrivacyClick() {
     // Navigate to Privacy Policy
+  }
+
+  Future<void> resetPasswordWithToken(
+    String email,
+    String token,
+    String newPassword,
+  ) async {
+    try {
+      isLoading.value = true;
+      await supabase.auth.verifyOTP(
+        email: email,
+        token: token,
+        type: OtpType.recovery,
+      );
+
+      await supabase.auth.updateUser(UserAttributes(password: newPassword));
+
+      Get.offAllNamed(Routes.login);
+      Get.snackbar(
+        'Success',
+        'Password has been reset successfully. Please login with your new password.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+      );
+    } catch (e) {
+      Fluttertoast.showToast(
+        msg: 'Failed to reset password. Please try again.',
+      );
+    } finally {
+      isLoading.value = false;
+    }
   }
 }
