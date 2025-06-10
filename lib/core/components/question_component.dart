@@ -163,13 +163,82 @@ class _QuestionComponentState extends State<QuestionComponent> {
     );
   }
 
+  Widget _buildMultipleChoice() {
+    final selectedSet = _selectedValue is Set ? _selectedValue as Set : <dynamic>{};
+    return Column(
+      children: widget.question.options.map((option) {
+        final isChecked = selectedSet.contains(option.value);
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: () {
+                setState(() {
+                  if (isChecked) {
+                    selectedSet.remove(option.value);
+                  } else {
+                    selectedSet.add(option.value);
+                  }
+                  _selectedValue = Set.from(selectedSet);
+                });
+                widget.question.onAnswer?.call(_selectedValue);
+              },
+              borderRadius: BorderRadius.circular(8),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  border: Border.all(
+                    color: isChecked ? AppColors.primaryBlue : AppColors.neutral200,
+                    width: isChecked ? 2 : 1,
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Checkbox(
+                      value: isChecked,
+                      onChanged: (val) {
+                        setState(() {
+                          if (val == true) {
+                            selectedSet.add(option.value);
+                          } else {
+                            selectedSet.remove(option.value);
+                          }
+                          _selectedValue = Set.from(selectedSet);
+                        });
+                        widget.question.onAnswer?.call(_selectedValue);
+                      },
+                    ),
+                    if (option.icon != null) ...[
+                      option.icon!,
+                      const SizedBox(width: 12),
+                    ],
+                    Expanded(
+                      child: Text(
+                        option.label,
+                        style: TextStyle(
+                          color: isChecked ? AppColors.primaryBlue : AppColors.textPrimary,
+                          fontWeight: isChecked ? FontWeight.w600 : FontWeight.normal,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
   Widget _buildQuestionContent() {
     switch (widget.question.type) {
       case QuestionType.singleChoice:
         return _buildSingleChoice();
       case QuestionType.multipleChoice:
-        // Implement multiple choice UI
-        return Container(); // Placeholder
+        return _buildMultipleChoice();
       case QuestionType.text:
         // Implement text input UI
         return Container(); // Placeholder
@@ -216,8 +285,8 @@ class _QuestionComponentState extends State<QuestionComponent> {
   Widget build(BuildContext context) {
     return Container(
       padding: widget.padding ?? const EdgeInsets.all(24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: ListView(
+   
         children: [
           Text(
             widget.question.question,
@@ -243,6 +312,64 @@ class _QuestionComponentState extends State<QuestionComponent> {
               child: Divider(),
             ),
         ],
+      ),
+    );
+  }
+}
+
+class QuestionFlowScreen extends StatefulWidget {
+  final List<Question> questions;
+  final VoidCallback? onComplete;
+
+  const QuestionFlowScreen({
+    Key? key,
+    required this.questions,
+    this.onComplete,
+  }) : super(key: key);
+
+  @override
+  State<QuestionFlowScreen> createState() => _QuestionFlowScreenState();
+}
+
+class _QuestionFlowScreenState extends State<QuestionFlowScreen> {
+  int _current = 0;
+  final Map<String, dynamic> _answers = {};
+
+  void _next(dynamic answer) {
+    _answers[widget.questions[_current].id] = answer;
+    if (_current < widget.questions.length - 1) {
+      setState(() => _current++);
+    } else {
+      widget.onComplete?.call();
+      Navigator.of(context).pop(_answers); // Return answers
+    }
+  }
+
+  void _back() {
+    if (_current > 0) setState(() => _current--);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final question = widget.questions[_current];
+    return Scaffold(
+      appBar: AppBar(
+        leading: _current > 0
+            ? IconButton(icon: Icon(Icons.arrow_back), onPressed: _back)
+            : null,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.close),
+            onPressed: () => Navigator.of(context).pop(),
+          )
+        ],
+      ),
+      body: QuestionComponent(
+        question: question,
+        initialValue: _answers[question.id],
+        onNext: () => _next(_answers[question.id]),
+        onBack: _back,
+        showActions: true,
       ),
     );
   }

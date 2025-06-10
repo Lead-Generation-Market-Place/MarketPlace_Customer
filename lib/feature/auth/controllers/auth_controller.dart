@@ -238,7 +238,7 @@ class AuthController extends GetxController {
         throw 'Apple sign in failed';
       }
 
-      NavigationHelper.goToHome();
+      Get.offAllNamed(Routes.home);
     } catch (e) {
       Fluttertoast.showToast(
         msg: 'Failed to sign in with Apple. Please try again.',

@@ -1,84 +1,74 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 import 'core/controllers/theme_controller.dart';
 import 'core/localization/localization.dart';
 import 'core/routes/routes.dart' hide RouteObserver;
 import 'core/services/service_bindings.dart';
 import 'core/utils/app_constants.dart';
 
-// Global navigator key for navigation from anywhere
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
-
-// Supabase instance
 final supabase = Supabase.instance.client;
 
-Future<void> initServices() async {
-  try {
-    // Ensure Flutter bindings are initialized
-    WidgetsFlutterBinding.ensureInitialized();
+Future<void> _initializeApp() async {
+  WidgetsFlutterBinding.ensureInitialized();
 
-    // Set system UI overlay style
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.transparent,
-        statusBarIconBrightness: Brightness.dark,
-        systemNavigationBarColor: Colors.white,
-        systemNavigationBarIconBrightness: Brightness.dark,
-      ),
-    );
+  // System UI settings
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarColor: Colors.white,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ),
+  );
 
-    // Set preferred orientations
-    await SystemChrome.setPreferredOrientations([
-      DeviceOrientation.portraitUp,
-      DeviceOrientation.portraitDown,
-    ]);
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+  ]);
 
-    // Initialize Supabase
-    await Supabase.initialize(
-      url: AppConstants.supabaseUrl,
-      anonKey: AppConstants.supabaseAnonKey,
-      debug: kDebugMode,
-    );
+  // Initialize Supabase
+  await Supabase.initialize(
+    url: AppConstants.supabaseUrl,
+    anonKey: AppConstants.supabaseAnonKey,
+    debug: kDebugMode,
+  );
 
-    // Initialize SharedPreferences
-    final prefs = await SharedPreferences.getInstance();
-    await Get.putAsync(() => Future.value(prefs));
+  // Shared Preferences
+  final prefs = await SharedPreferences.getInstance();
+  await Get.putAsync(() => Future.value(prefs));
 
-    // Initialize other services
-    await ServiceBindings().dependencies();
+  // Dependency injection
+  await ServiceBindings().dependencies();
 
-    // Initialize Theme Controller last since it depends on SharedPreferences
-    final themeController = Get.put(ThemeController(), permanent: true);
-    await themeController.initTheme();
-  } catch (e, stackTrace) {
-    debugPrint('Initialization Error: $e');
-    debugPrint('Stack Trace: $stackTrace');
-    rethrow;
-  }
+  // Theme Controller
+  final themeController = Get.put(ThemeController(), permanent: true);
+  await themeController.initTheme();
 }
 
 void main() {
   runZonedGuarded(
     () async {
-      await initServices();
+      await _initializeApp();
       runApp(const MyApp());
     },
     (error, stackTrace) {
-      debugPrint('Error: $error');
-      debugPrint('Stack Trace: $stackTrace');
-      // Here you can implement error reporting service
-      // Example: Sentry.captureException(error, stackTrace: stackTrace);
+      debugPrint('Unhandled Error: $error');
+      debugPrint('StackTrace: $stackTrace');
+      // Optionally report to an external service like Sentry, Firebase Crashlytics
     },
   );
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -94,112 +84,38 @@ class MyApp extends StatelessWidget {
       locale: LocalizationService.locale,
       fallbackLocale: LocalizationService.fallbackLocale,
 
-      // Theme
+      // Themes
       theme: ThemeController.lightTheme,
       darkTheme: ThemeController.darkTheme,
       themeMode: themeController.themeMode,
 
-      // Navigation and Routing
+      // Routing
       initialRoute: Routes.splash,
       getPages: AppPages.pages,
       defaultTransition: Transition.fade,
       navigatorObservers: [Get.put(RouteObserver<Route>())],
 
-      // Global Error Handling
-      onUnknownRoute: (settings) {
-        return GetPageRoute(
-          page: () => Scaffold(
-            body: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.error_outline,
-                    color: Get.theme.colorScheme.error,
-                    size: 48,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Page not found: ${settings.name}'.tr,
-                    style: Get.textTheme.titleMedium,
-                  ),
-                  const SizedBox(height: 8),
-                  ElevatedButton(
-                    onPressed: () => Get.offAllNamed(Routes.home),
-                    child: Text('Go to Home'.tr),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        );
-      },
+      // Unknown Route
+      onUnknownRoute: (settings) => GetPageRoute(
+        page: () => _UnknownRouteScreen(routeName: settings.name),
+      ),
 
-      // Error Widget and Screen Utilities
-      builder: (context, widget) {
-        // Error Builder
+      // Error Handling and Screen Adaptation
+      builder: (context, child) {
         ErrorWidget.builder = (FlutterErrorDetails details) {
-          return GetMaterialApp(
-            debugShowCheckedModeBanner: false,
-            home: Scaffold(
-              body: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      color: Get.theme.colorScheme.error,
-                      size: 48,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Something went wrong'.tr,
-                      style: Get.textTheme.titleMedium,
-                    ),
-                    const SizedBox(height: 8),
-                    if (kDebugMode)
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Text(
-                          details.exception.toString(),
-                          style: Get.textTheme.bodySmall,
-                          textAlign: TextAlign.center,
-                        ),
-                      ),
-                    ElevatedButton(
-                      onPressed: () => Get.offAllNamed(Routes.home),
-                      child: Text('Restart App'.tr),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
+          return _ErrorScreen(details: details);
         };
 
-        // Screen Utilities
-        widget = ScrollConfiguration(
-          behavior: const ScrollBehavior().copyWith(
-            physics: const BouncingScrollPhysics(),
-            overscroll: true,
-          ),
-          child: widget!,
-        );
-
-        // Media Query
         return MediaQuery(
           data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
-          child: widget,
+          child: child!,
         );
       },
 
-      // Logging and Analytics
+      // Logging
       routingCallback: (routing) {
         if (routing?.current != null) {
-          // Log navigation
           debugPrint('Navigation: ${routing?.previous} -> ${routing?.current}');
-
-          // Implement analytics page tracking
           _trackScreenView(routing!.current!);
         }
       },
@@ -207,8 +123,69 @@ class MyApp extends StatelessWidget {
   }
 
   void _trackScreenView(String screenName) {
-    // Implement your analytics tracking here
-    // Example: Analytics.logScreenView(screenName: screenName);
+    // Replace this with actual analytics tracking
     debugPrint('Screen View: $screenName');
+  }
+}
+
+// Error Screen Widget
+class _ErrorScreen extends StatelessWidget {
+  final FlutterErrorDetails details;
+
+  const _ErrorScreen({required this.details});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline, color: Get.theme.colorScheme.error, size: 48),
+              const SizedBox(height: 16),
+              Text('Something went wrong'.tr, style: Get.textTheme.titleMedium),
+              const SizedBox(height: 8),
+              if (kDebugMode)
+                Text(details.exception.toString(), style: Get.textTheme.bodySmall, textAlign: TextAlign.center),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => Get.offAllNamed(Routes.home),
+                child: Text('Restart App'.tr),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Unknown Route Screen Widget
+class _UnknownRouteScreen extends StatelessWidget {
+  final String? routeName;
+
+  const _UnknownRouteScreen({this.routeName});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.error_outline, color: Get.theme.colorScheme.error, size: 48),
+            const SizedBox(height: 16),
+            Text('Page not found: $routeName'.tr, style: Get.textTheme.titleMedium),
+            const SizedBox(height: 8),
+            ElevatedButton(
+              onPressed: () => Get.offAllNamed(Routes.home),
+              child: Text('Go to Home'.tr),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
