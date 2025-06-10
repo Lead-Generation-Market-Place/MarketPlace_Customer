@@ -281,14 +281,6 @@ class _QuestionComponentState extends State<QuestionComponent> {
     );
   }
 
-
-
-
-
-
-
-
-
   @override
   Widget build(BuildContext context) {
     return Container(

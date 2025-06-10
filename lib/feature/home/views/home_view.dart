@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:us_connector/core/constants/file_urls.dart';
 import 'package:us_connector/core/routes/routes.dart';
 import 'package:us_connector/core/widgets/bottom_navbar.dart';
 import 'package:us_connector/feature/home/controllers/home_controller.dart';
@@ -85,7 +86,8 @@ class HomeView extends GetView<HomeController> {
                     separatorBuilder: (_, __) => const SizedBox(width: 16),
                     itemBuilder: (context, index) {
                       final service = services[index];
-                      final imageUrl = service['image_url'] ?? '';
+                      final imageUrl = service['service_image_url'] ?? '';
+                      print(imageUrl);
                       return GestureDetector(
                         onTap: () async {
                           await controller.fetchQuestions(service['id']);
@@ -100,22 +102,23 @@ class HomeView extends GetView<HomeController> {
                                 borderRadius: BorderRadius.circular(12),
                                 child: imageUrl.isNotEmpty
                                     ? Image.network(
-                                        imageUrl,
+                                        '${FileUrls.servicesLogos}$imageUrl', // Removed extra space
                                         height: 110,
                                         width: 140,
                                         fit: BoxFit.cover,
-                                        errorBuilder:
-                                            (context, error, stackTrace) =>
-                                                Container(
-                                                  height: 110,
-                                                  width: 140,
-                                                  color: Colors.grey[300],
-                                                  child: const Icon(
-                                                    Icons.broken_image,
-                                                    size: 40,
-                                                    color: Colors.grey,
-                                                  ),
-                                                ),
+                                        errorBuilder: (context, error, stackTrace) {
+                                          print('Error loading image: $error'); // Added error logging
+                                          return Container(
+                                            height: 110,
+                                            width: 140,
+                                            color: Colors.grey[300],
+                                            child: const Icon(
+                                              Icons.broken_image,
+                                              size: 40,
+                                              color: Colors.grey,
+                                            ),
+                                          );
+                                        },
                                       )
                                     : Container(
                                         height: 110,
