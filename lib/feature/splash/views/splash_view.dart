@@ -15,18 +15,21 @@ class SplashView extends GetView<SplashController> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             // Logo or App Name
-            Text(
-              'US Connector',
-              style: Get.textTheme.headlineLarge?.copyWith(
+            const Text(
+              'Yalpax',
+              style: TextStyle(
                 color: Colors.white,
+                fontSize: 32,
                 fontWeight: FontWeight.bold,
               ),
             ),
             const SizedBox(height: 24),
             // Loading indicator
-            const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-            ),
+            Obx(() => controller.isInitialized.value
+              ? const CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                )
+              : const SizedBox.shrink()),
           ],
         ),
       ),

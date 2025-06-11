@@ -7,26 +7,18 @@ import 'package:us_connector/core/routes/routes.dart';
 class OneTimeInitialController extends GetxController {
   final pageController = PageController();
   final currentPage = 0.obs;
+  late final SharedPreferences _prefs;
 
   @override
   void onInit() {
     super.onInit();
-    checkOnboardingStatus();
+    _prefs = Get.find<SharedPreferences>();
   }
 
   @override
   void onClose() {
     pageController.dispose();
     super.onClose();
-  }
-
-  Future<void> checkOnboardingStatus() async {
-    final prefs = await SharedPreferences.getInstance();
-    final onboardingComplete = prefs.getBool(AppConstants.onboardingCompleteKey) ?? false;
-    
-    if (onboardingComplete) {
-      Get.offAllNamed(Routes.login);
-    }
   }
 
   void onPageChanged(int page) {
@@ -43,12 +35,14 @@ class OneTimeInitialController extends GetxController {
   }
 
   Future<void> finishOnboarding() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setBool(AppConstants.onboardingCompleteKey, true);
+    debugPrint('Onboarding: Marking as complete');
+    await _prefs.setBool(AppConstants.onboardingCompleteKey, true);
+    debugPrint('Onboarding: Navigating to login');
     Get.offAllNamed(Routes.login);
   }
 
   Future<void> skipOnboarding() async {
+    debugPrint('Onboarding: Skipping onboarding');
     await finishOnboarding();
   }
 }

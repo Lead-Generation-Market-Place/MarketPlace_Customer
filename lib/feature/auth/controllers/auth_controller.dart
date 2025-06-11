@@ -162,9 +162,7 @@ class AuthController extends GetxController {
     }
   }
 
-  void goToSignup() {
-    NavigationHelper.goToSignup();
-  }
+
 
   // Social Auth Methods
   StreamSubscription? _sub;

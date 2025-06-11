@@ -55,7 +55,7 @@ dev_dependencies:
   flutter_lints: ^5.0.0
 
 flutter_launcher_icons:
-  image_path: "assets/icons/us-connector.png"
+  image_path: "assets/icons/yelpax.png"
   android: true
   ios: true
 
@@ -82,7 +82,6 @@ flutter:
   assets:
     - assets/lottie/
     - assets/icons/
-    - assets/icons/us-connector.png
     - assets/images/
     - assets/images/splash_1.jpg
 
