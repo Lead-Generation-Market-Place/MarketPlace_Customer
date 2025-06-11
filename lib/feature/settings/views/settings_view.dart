@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:us_connector/core/routes/routes.dart';
+import 'package:us_connector/feature/auth/controllers/auth_controller.dart';
 
 import 'package:us_connector/feature/settings/controller/setting_controller.dart';
 import 'package:us_connector/main.dart';
 
-
 class SettingsView extends GetView<SettingsController> {
-  const SettingsView({super.key});
-  
-  @override
+  SettingsView({super.key});
+  final AuthController authController = Get.put(AuthController() );
   Widget build(BuildContext context) {
     // ThemeData for easy access to theme properties
     final theme = Theme.of(context);
@@ -28,40 +27,50 @@ class SettingsView extends GetView<SettingsController> {
         title: const Text('You'),
         backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0, // Remove shadow to match the image
-        iconTheme: IconThemeData(color: theme.textTheme.bodyLarge?.color), // Match icon color with text
+        iconTheme: IconThemeData(
+          color: theme.textTheme.bodyLarge?.color,
+        ), // Match icon color with text
         titleTextStyle: theme.textTheme.titleLarge?.copyWith(
-          fontWeight: FontWeight.bold, // Making title bold as per common UI practices
+          fontWeight:
+              FontWeight.bold, // Making title bold as per common UI practices
         ),
       ),
       body: Column(
         children: [
           Expanded(
-            child: ListView( // Outer ListView to ensure the entire page is scrollable if content exceeds screen height
+            child: ListView(
+              // Outer ListView to ensure the entire page is scrollable if content exceeds screen height
               children: <Widget>[
                 const SizedBox(height: 20),
                 // User Profile Section
                 Column(
                   children: <Widget>[
-                    const CircleAvatar(
+                    CircleAvatar(
+                    
                       radius: 50,
-                      // TODO: Replace with actual user image or a placeholder icon
-                      backgroundColor: Colors.grey, // Placeholder color
-                      child: Icon(Icons.person, size: 50, color: Colors.white),
+                      backgroundColor: Colors.grey,
+                      backgroundImage: NetworkImage(authController.profilePictureUrl.value),
+                      child: authController.profilePictureUrl.value.isEmpty
+                          ? const Icon(Icons.person, size: 50, color: Colors.white)
+                          : null,
                     ),
                     const SizedBox(height: 12),
-                    Text(
-                      'Noor Dev',
-                      style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold),
-                    ),
+                    Obx(() => Text(
+                      authController.name.value,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    )),
                     const SizedBox(height: 4),
-                    Text(
-                      'devnoor722@gmail.com',
-                      style: theme.textTheme.bodyMedium?.copyWith(color: Colors.grey[600]),
-                    ),
+                    Obx(() => Text(
+                      authController.email.value,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: Colors.grey[600],
+                      ),
+                    )),
                   ],
                 ),
                 const SizedBox(height: 30), // Spacing before the list items
-
                 // Settings List - Individual Widgets
                 ListTile(
                   title: const Text('Set password'),
@@ -99,7 +108,10 @@ class SettingsView extends GetView<SettingsController> {
                   title: const Text('CA Notice at Collection'),
                   onTap: () {
                     // TODO: Implement navigation or action
-                    Get.snackbar('Selected', 'Tapped on CA Notice at Collection');
+                    Get.snackbar(
+                      'Selected',
+                      'Tapped on CA Notice at Collection',
+                    );
                   },
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 0),
@@ -115,7 +127,10 @@ class SettingsView extends GetView<SettingsController> {
                   title: const Text('Report a technical problem'),
                   onTap: () {
                     // TODO: Implement navigation or action
-                    Get.snackbar('Selected', 'Tapped on Report a technical problem');
+                    Get.snackbar(
+                      'Selected',
+                      'Tapped on Report a technical problem',
+                    );
                   },
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 0),
@@ -123,7 +138,10 @@ class SettingsView extends GetView<SettingsController> {
                   title: const Text('Do not sell or share my info'),
                   onTap: () {
                     // TODO: Implement navigation or action
-                    Get.snackbar('Selected', 'Tapped on Do not sell or share my info');
+                    Get.snackbar(
+                      'Selected',
+                      'Tapped on Do not sell or share my info',
+                    );
                   },
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 0),
@@ -139,7 +157,10 @@ class SettingsView extends GetView<SettingsController> {
                   title: const Text('Delete my account data'),
                   onTap: () {
                     // TODO: Implement navigation or action
-                    Get.snackbar('Selected', 'Tapped on Delete my account data');
+                    Get.snackbar(
+                      'Selected',
+                      'Tapped on Delete my account data',
+                    );
                   },
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 0),
@@ -149,7 +170,9 @@ class SettingsView extends GetView<SettingsController> {
                     Get.dialog(
                       AlertDialog(
                         title: const Text('Sign Out'),
-                        content: const Text('Are you sure you want to sign out?'),
+                        content: const Text(
+                          'Are you sure you want to sign out?',
+                        ),
                         actions: <Widget>[
                           TextButton(
                             child: const Text('No'),
@@ -166,7 +189,8 @@ class SettingsView extends GetView<SettingsController> {
                           ),
                         ],
                       ),
-                      barrierDismissible: true, // Default is true, explicitly set for clarity
+                      barrierDismissible:
+                          true, // Default is true, explicitly set for clarity
                     );
                   },
                 ),
@@ -179,7 +203,9 @@ class SettingsView extends GetView<SettingsController> {
             padding: const EdgeInsets.symmetric(vertical: 20.0),
             child: Text(
               'Version 375.0',
-              style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey[600]),
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: Colors.grey[600],
+              ),
             ),
           ),
         ],

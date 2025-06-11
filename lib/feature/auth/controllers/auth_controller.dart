@@ -29,12 +29,16 @@ class AuthController extends GetxController {
   final nameError = RxnString();
   final confirmPasswordError = RxnString();
   final termsError = RxnString();
-
+  RxString email = ''.obs;
+  RxString name = ''.obs;
+  RxString profilePictureUrl = ''.obs;
   // Reset password variables
   final resetEmailError = RxnString();
   final resetTokenError = RxnString();
   final resetPasswordError = RxnString();
   final resetConfirmPasswordError = RxnString();
+
+  RxString authUserId = ''.obs;
 
   @override
   void onClose() {
@@ -69,16 +73,22 @@ class AuthController extends GetxController {
           .select()
           .eq('email', credentials['email'] ?? '')
           .select();
-
+   name.value = response.user?.userMetadata?['username'] ?? response.user?.email ?? '';
+        email.value = response.user?.email ?? '';
       if (userProfile.isEmpty) {
         final insertResponse = await supabase.from('users_profiles').insert({
           'email': response.user?.email,
           'username': response.user?.userMetadata?['username'],
         }).select();
 
+     
+        
         if (insertResponse.isNotEmpty) {
           return {'status': insertResponse, 'user': null};
         }
+      } else {
+        name.value = userProfile[0]['username'] ?? response.user?.email ?? '';
+        email.value = response.user?.email ?? '';
       }
 
       Get.offAllNamed(Routes.home);
@@ -149,11 +159,9 @@ class AuthController extends GetxController {
       isLoading.value = true;
       await supabase.auth.resetPasswordForEmail(email);
 
-   
       emailController.clear();
       Fluttertoast.showToast(msg: 'Reset email sent');
     } catch (e) {
-    
       emailController.clear();
       Fluttertoast.showToast(msg: 'Reset email sent');
     } finally {
@@ -162,14 +170,13 @@ class AuthController extends GetxController {
     }
   }
 
-
-
   // Social Auth Methods
   StreamSubscription? _sub;
 
   Future<void> signInWithGoogle() async {
     try {
       await supabase.auth.signOut();
+
       /// TODO: update the Web client ID with your own.
       ///
       /// Web Client ID that you registered with Google Cloud.
@@ -196,7 +203,7 @@ class AuthController extends GetxController {
 
       // Sign out from Google first to clear any cached credentials
       await googleSignIn.signOut();
-      
+
       final googleUser = await googleSignIn.signIn();
       final googleAuth = await googleUser!.authentication;
       final accessToken = googleAuth.accessToken;
