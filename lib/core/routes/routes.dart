@@ -9,6 +9,7 @@ import 'package:us_connector/feature/home/views/home_view.dart';
 import 'package:us_connector/feature/inbox/views/inbox_view.dart';
 import 'package:us_connector/feature/one_time_initial_view/controllers/one_time_initial_binding.dart';
 import 'package:us_connector/feature/plan/views/plan_view.dart';
+import 'package:us_connector/feature/search/controllers/search_binding.dart';
 import 'package:us_connector/feature/search/views/search_view.dart';
 import 'package:us_connector/feature/settings/views/settings_view.dart';
 import 'package:us_connector/feature/team/views/team_view.dart';
@@ -130,6 +131,7 @@ abstract class AppPages {
       name: Routes.search,
       page: () => SearchView(),
       middlewares: [AuthMiddleware()],
+      binding: SearchBinding(),
       transition: Transition.downToUp,
     ),
 

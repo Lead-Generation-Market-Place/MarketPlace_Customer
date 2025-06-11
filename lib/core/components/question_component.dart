@@ -49,7 +49,7 @@ class QuestionComponent extends StatefulWidget {
   final dynamic initialValue;
   final EdgeInsetsGeometry? padding;
   final bool showDivider;
-  final VoidCallback? onNext;
+  final Function(dynamic)? onNext;
   final VoidCallback? onBack;
   final bool showActions;
 
@@ -265,7 +265,7 @@ class _QuestionComponentState extends State<QuestionComponent> {
             ),
           const Spacer(),
           ElevatedButton(
-            onPressed: _selectedValue != null ? widget.onNext : null,
+            onPressed: _selectedValue != null ? () => widget.onNext?.call(_selectedValue) : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primaryBlue,
               foregroundColor: Colors.white,
@@ -336,17 +336,24 @@ class _QuestionFlowScreenState extends State<QuestionFlowScreen> {
   final Map<String, dynamic> _answers = {};
 
   void _next(dynamic answer) {
-    _answers[widget.questions[_current].id] = answer;
+    if (answer != null) {
+      setState(() {
+        _answers[widget.questions[_current].id] = answer;
+      });
+    }
+    
     if (_current < widget.questions.length - 1) {
       setState(() => _current++);
     } else {
       widget.onComplete?.call();
-      Navigator.of(context).pop(_answers); // Return answers
+      Navigator.of(context).pop(_answers);
     }
   }
 
   void _back() {
-    if (_current > 0) setState(() => _current--);
+    if (_current > 0) {
+      setState(() => _current--);
+    }
   }
 
   @override
@@ -367,7 +374,7 @@ class _QuestionFlowScreenState extends State<QuestionFlowScreen> {
       body: QuestionComponent(
         question: question,
         initialValue: _answers[question.id],
-        onNext: () => _next(_answers[question.id]),
+        onNext: _next,
         onBack: _back,
         showActions: true,
       ),
