@@ -50,6 +50,7 @@ class HomeView extends GetView<HomeController> {
                 ),
                 child: TextField(
                   controller: _searchController,
+                  onTap: () => Get.toNamed(Routes.search),
                   decoration: InputDecoration(
                     hintText: "What do you need help with?",
                     prefixIcon: const Icon(Icons.search),
