@@ -1,6 +1,6 @@
 class AppConstants {
   // App Info
-  static const String appName = 'US Connector';
+  static const String appName = 'Yalpax';
   static const String appVersion = '1.0.0';
   
   // API Endpoints

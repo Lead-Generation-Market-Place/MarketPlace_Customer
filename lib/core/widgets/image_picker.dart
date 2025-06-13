@@ -37,7 +37,7 @@ class ImagePickerWidget extends StatelessWidget {
     this.placeholder,
   }) : super(key: key);
 
-  Future<void> _pickImage(ImageSource source, BuildContext context) async {
+  Future<void> pickImage(ImageSource source, BuildContext context) async {
     try {
       // Request permission based on source
       if (source == ImageSource.camera) {
@@ -90,7 +90,7 @@ class ImagePickerWidget extends StatelessWidget {
     }
   }
 
-  void _showImageSourceDialog(BuildContext context) {
+  void showImageSourceDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
@@ -105,7 +105,7 @@ class ImagePickerWidget extends StatelessWidget {
                   title: Text(cameraButtonText ?? 'Take Photo'),
                   onTap: () {
                     Navigator.pop(context);
-                    _pickImage(ImageSource.camera, context);
+                    pickImage(ImageSource.camera, context);
                   },
                 ),
               if (showGalleryOption)
@@ -114,7 +114,7 @@ class ImagePickerWidget extends StatelessWidget {
                   title: Text(galleryButtonText ?? 'Choose from Gallery'),
                   onTap: () {
                     Navigator.pop(context);
-                    _pickImage(ImageSource.gallery, context);
+                    pickImage(ImageSource.gallery, context);
                   },
                 ),
             ],
@@ -127,7 +127,7 @@ class ImagePickerWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => _showImageSourceDialog(context),
+      onTap: () => showImageSourceDialog(context),
       child: Container(
         width: width ?? 150,
         height: height ?? 150,
@@ -198,11 +198,43 @@ class ImagePickerService {
     int maxHeight = 1080,
   }) async {
     try {
-      final status = await Permission.photos.request();
-      if (!status.isGranted) {
-        throw Exception('Photo library permission not granted');
+      if (Platform.isAndroid) {
+        // For Android 13 and above
+        if (await Permission.storage.status.isGranted) {
+          final XFile? pickedFile = await _picker.pickImage(
+            source: ImageSource.gallery,
+            imageQuality: imageQuality,
+            maxWidth: maxWidth.toDouble(),
+            maxHeight: maxHeight.toDouble(),
+          );
+          return pickedFile != null ? File(pickedFile.path) : null;
+        }
+        
+        // Request storage permission
+        final status = await Permission.storage.request();
+        if (!status.isGranted) {
+          throw Exception('Storage permission not granted');
+        }
+      } else if (Platform.isIOS) {
+        // For iOS
+        if (await Permission.photos.status.isGranted) {
+          final XFile? pickedFile = await _picker.pickImage(
+            source: ImageSource.gallery,
+            imageQuality: imageQuality,
+            maxWidth: maxWidth.toDouble(),
+            maxHeight: maxHeight.toDouble(),
+          );
+          return pickedFile != null ? File(pickedFile.path) : null;
+        }
+        
+        // Request photos permission
+        final status = await Permission.photos.request();
+        if (!status.isGranted) {
+          throw Exception('Photos permission not granted');
+        }
       }
 
+      // If we get here, permission was granted, so try picking the image
       final XFile? pickedFile = await _picker.pickImage(
         source: ImageSource.gallery,
         imageQuality: imageQuality,

@@ -18,6 +18,7 @@ final supabase = Supabase.instance.client;
 
 Future<void> _initializeApp() async {
   WidgetsFlutterBinding.ensureInitialized();
+  debugPrint('Initializing app...');
 
   // System UI settings
   SystemChrome.setSystemUIOverlayStyle(
@@ -35,6 +36,7 @@ Future<void> _initializeApp() async {
   ]);
 
   // Initialize Supabase
+  debugPrint('Initializing Supabase...');
   await Supabase.initialize(
     url: AppConstants.supabaseUrl,
     anonKey: AppConstants.supabaseAnonKey,
@@ -42,21 +44,32 @@ Future<void> _initializeApp() async {
   );
 
   // Shared Preferences
+  debugPrint('Initializing SharedPreferences...');
   final prefs = await SharedPreferences.getInstance();
   await Get.putAsync(() => Future.value(prefs));
+  
+  // Check if onboarding is completed
+  final hasCompletedOnboarding = prefs.getBool(AppConstants.onboardingCompleteKey) ?? false;
+  debugPrint('Onboarding status: ${hasCompletedOnboarding ? 'Completed' : 'Not completed'}');
+  
+  debugPrint('SharedPreferences initialized');
 
   // Dependency injection
+  debugPrint('Setting up dependencies...');
   await ServiceBindings().dependencies();
 
   // Theme Controller
+  debugPrint('Initializing theme controller...');
   final themeController = Get.put(ThemeController(), permanent: true);
   await themeController.initTheme();
+  debugPrint('App initialization complete');
 }
 
 void main() {
   runZonedGuarded(
     () async {
       await _initializeApp();
+      debugPrint('Starting app...');
       runApp(const MyApp());
     },
     (error, stackTrace) {
@@ -123,7 +136,6 @@ class MyApp extends StatelessWidget {
   }
 
   void _trackScreenView(String screenName) {
-    // Replace this with actual analytics tracking
     debugPrint('Screen View: $screenName');
   }
 }

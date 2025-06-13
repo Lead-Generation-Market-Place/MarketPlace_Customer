@@ -273,7 +273,7 @@ class LoginView extends GetView<AuthController> {
                 style: TextStyle(color: AppColors.textSecondary),
               ),
               TextButton(
-                onPressed: () => controller.goToSignup(),
+                onPressed: () => Get.toNamed(Routes.signup),
                 child: Text(
                   'Register',
                   style: TextStyle(

@@ -41,6 +41,13 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<!-- camera permiisiion -->
+	<!-- <key>NSCameraUsageDescription</key>
+<string>We need camera access to take photos.</string>
+
+<key>NSPhotoLibraryUsageDescription</key>
+<string>We need access to your photo library to select images.</string> -->
+
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
