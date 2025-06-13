@@ -11,6 +11,7 @@ import 'package:us_connector/feature/one_time_initial_view/controllers/one_time_
 import 'package:us_connector/feature/plan/views/plan_view.dart';
 import 'package:us_connector/feature/search/controllers/search_binding.dart';
 import 'package:us_connector/feature/search/views/search_view.dart';
+import 'package:us_connector/feature/settings/views/set_new_password_view.dart';
 import 'package:us_connector/feature/settings/views/settings_view.dart';
 import 'package:us_connector/feature/team/views/team_view.dart';
 import '../../feature/splash/views/splash_view.dart';
@@ -35,6 +36,7 @@ abstract class Routes {
   static const team = '/team';
   static const resetPassword = '/reset-password';
   static const resetPasswordToken = '/reset-password-token';
+  static const setNewPasswordView = '/set-new-password';
 }
 
 // Middleware
@@ -167,12 +169,20 @@ abstract class AppPages {
       binding: AuthBinding(),
       transition: Transition.fadeIn,
     ),
+   
     GetPage(
       name: Routes.resetPasswordToken,
       page: () => ResetPasswordToken(),
       binding: AuthBinding(),
       transition: Transition.fadeIn,
     ),
+     GetPage(
+      name: Routes.setNewPasswordView,
+      page: () => SetNewPasswordView(),
+      middlewares: [AuthMiddleware()],
+      transition: Transition.rightToLeft,
+    ),
+
   ];
 }
 

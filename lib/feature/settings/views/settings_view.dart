@@ -1,3 +1,4 @@
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:logger/web.dart';
@@ -10,57 +11,72 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
 import 'package:us_connector/feature/settings/controller/setting_controller.dart';
+import 'package:us_connector/feature/settings/views/set_new_password_view.dart';
 import 'package:us_connector/main.dart';
 
 class SettingsView extends GetView<SettingsController> {
   final AuthController authController = Get.put(AuthController());
-  SettingsView({super.key}){
+  SettingsView({super.key}) {
     authController.loadUserData();
   }
 
   Future<bool> _handlePermission(ImageSource source) async {
-    if (source == ImageSource.camera) {
-      final status = await Permission.camera.status;
-      if (status.isPermanentlyDenied) {
-        await _showPermissionDialog(
-          'Camera Permission Required',
-          'Camera access is required to take photos. Please enable it in your device settings.',
-          Permission.camera,
-        );
-        return false;
-      }
+    final androidVersion =
+        await DeviceInfoPlugin().androidInfo; //package to get Device Info
 
-      final result = await Permission.camera.request();
-      if (result.isDenied) {
-        Get.snackbar(
-          'Permission Required',
-          'Camera permission is required to take photos',
-          snackPosition: SnackPosition.BOTTOM,
-        );
-        return false;
+    if (source == ImageSource.camera) {
+      if (Platform.isAndroid) {
+        if (androidVersion.version.sdkInt <= 28) {
+          final status = await Permission.camera.status;
+
+          if (status.isPermanentlyDenied) {
+            await _showPermissionDialog(
+              'Camera Permission Required',
+              'Camera access is required to take photos. Please enable it in your device settings.',
+              Permission.camera,
+            );
+            return false;
+          }
+
+          final result = await Permission.camera.request();
+          if (result.isDenied) {
+            Get.snackbar(
+              'Permission Required',
+              'Camera permission is required to take photos',
+              snackPosition: SnackPosition.BOTTOM,
+            );
+            return false;
+          }
+        } else {
+          return true; // No permission needed for Android 10+
+        }
       }
     } else {
       // For gallery access
       if (Platform.isAndroid) {
-        // On Android, we need storage permission
         final status = await Permission.storage.status;
-        if (status.isPermanentlyDenied) {
-          await _showPermissionDialog(
-            'Storage Permission Required',
-            'Storage access is required to select images. Please enable it in your device settings.',
-            Permission.storage,
-          );
-          return false;
-        }
+        if (androidVersion.version.sdkInt <= 28) {
+          if (status.isPermanentlyDenied) {
+            await _showPermissionDialog(
+              'Storage Permission Required',
+              'Storage access is required to select images. Please enable it in your device settings.',
+              Permission.storage,
+            );
+            return false;
+          }
 
-        final result = await Permission.storage.request();
-        if (result.isDenied) {
-          Get.snackbar(
-            'Permission Required',
-            'Storage permission is required to select images',
-            snackPosition: SnackPosition.BOTTOM,
-          );
-          return false;
+          final result = await Permission.storage.request();
+          if (result.isDenied) {
+            Get.snackbar(
+              'Permission Required',
+              'Storage permission is required to select images',
+              snackPosition: SnackPosition.BOTTOM,
+            );
+            return false;
+          }
+        } else {
+          return true;
+          ;
         }
       } else if (Platform.isIOS) {
         // On iOS, we need photos permission
@@ -99,10 +115,7 @@ class SettingsView extends GetView<SettingsController> {
         title: Text(title),
         content: Text(message),
         actions: [
-          TextButton(
-            onPressed: () => Get.back(),
-            child: const Text('Cancel'),
-          ),
+          TextButton(onPressed: () => Get.back(), child: const Text('Cancel')),
           TextButton(
             onPressed: () async {
               Get.back();
@@ -127,6 +140,7 @@ class SettingsView extends GetView<SettingsController> {
                 title: const Text('Take Photo'),
                 onTap: () async {
                   Navigator.pop(context);
+
                   if (await _handlePermission(ImageSource.camera)) {
                     final file = await ImagePickerService().pickFromCamera();
                     if (file != null) {
@@ -164,8 +178,6 @@ class SettingsView extends GetView<SettingsController> {
   }
 
   Widget build(BuildContext context) {
-
-
     // ThemeData for easy access to theme properties
     final theme = Theme.of(context);
     final imageUrl = authController.profilePictureUrl.value ?? '';
@@ -204,12 +216,15 @@ class SettingsView extends GetView<SettingsController> {
                     GestureDetector(
                       onTap: () => _showImagePickerBottomSheet(context),
                       child: Obx(() {
-                        final hasImage = authController.profilePictureUrl.value.isNotEmpty;
+                        final hasImage =
+                            authController.profilePictureUrl.value.isNotEmpty;
                         return CircleAvatar(
                           radius: 50,
                           backgroundColor: Colors.grey,
                           backgroundImage: hasImage
-                              ? NetworkImage('${FileUrls.userProfilePicture}$imageUrl')
+                              ? NetworkImage(
+                                  '${FileUrls.userProfilePicture}$imageUrl',
+                                )
                               : null,
                           child: !hasImage
                               ? const Icon(
@@ -246,8 +261,8 @@ class SettingsView extends GetView<SettingsController> {
                 ListTile(
                   title: const Text('Set password'),
                   onTap: () {
-                    // TODO: Implement navigation or action
-                    Get.snackbar('Selected', 'Tapped on Set password');
+                   Get.toNamed(Routes.setNewPasswordView);
+                    // Get.off(()=>SetNewPasswordView());
                   },
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 0),
