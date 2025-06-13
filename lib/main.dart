@@ -49,7 +49,8 @@ Future<void> _initializeApp() async {
   await Get.putAsync(() => Future.value(prefs));
   
   // Check if onboarding is completed
-  final hasCompletedOnboarding = prefs.getBool(AppConstants.onboardingCompleteKey) ?? false;
+  final hasCompletedOnboarding = prefs.getBool(AppConstants.onboardingCompleteKey) ?? 
+  false;
   debugPrint('Onboarding status: ${hasCompletedOnboarding ? 'Completed' : 'Not completed'}');
   
   debugPrint('SharedPreferences initialized');

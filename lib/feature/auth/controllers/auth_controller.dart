@@ -40,9 +40,15 @@ class AuthController extends GetxController {
 
   RxString authUserId = ''.obs;
 
-
-
-  Future<void> loadUserData() async {
+  @override
+  void onClose() {
+    nameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
+    confirmPasswordController.dispose();
+    super.onClose();
+  }
+Future<void> loadUserData() async {
     try {
       final session = supabase.auth.currentSession;
       if (session != null) {
@@ -65,16 +71,6 @@ class AuthController extends GetxController {
       debugPrint('Error loading user data: $e');
     }
   }
-
-  @override
-  void onClose() {
-    nameController.dispose();
-    emailController.dispose();
-    passwordController.dispose();
-    confirmPasswordController.dispose();
-    super.onClose();
-  }
-
   // Login Methods
   Future<Map<String, dynamic>> login() async {
     try {
@@ -99,17 +95,18 @@ class AuthController extends GetxController {
           .select()
           .eq('email', credentials['email'] ?? '')
           .select();
-      name.value =
-          response.user?.userMetadata?['username'] ??
-          response.user?.email ??
-          '';
-      email.value = response.user?.email ?? '';
+   name.value = response.user?.userMetadata?['username'] ?? response.user?.email ?? '';
+        email.value = response.user?.email ?? '';
+
+        profilePictureUrl.value = userProfile[0]['profile_picture_url'];
       if (userProfile.isEmpty) {
         final insertResponse = await supabase.from('users_profiles').insert({
           'email': response.user?.email,
           'username': response.user?.userMetadata?['username'],
         }).select();
 
+     
+        
         if (insertResponse.isNotEmpty) {
           return {'status': insertResponse, 'user': null};
         }

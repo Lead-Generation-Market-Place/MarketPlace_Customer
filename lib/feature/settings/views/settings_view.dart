@@ -209,7 +209,7 @@ class SettingsView extends GetView<SettingsController> {
                           radius: 50,
                           backgroundColor: Colors.grey,
                           backgroundImage: hasImage
-                              ? NetworkImage('${FileUrls.userProfilePicture}$imageUrl')
+                              ? NetworkImage('${FileUrls.profilePicture}$imageUrl')
                               : null,
                           child: !hasImage
                               ? const Icon(
