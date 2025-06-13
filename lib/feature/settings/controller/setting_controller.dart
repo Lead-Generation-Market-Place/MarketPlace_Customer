@@ -54,4 +54,7 @@ class SettingsController extends GetxController {
       isLoading.value = false;
     }
   }
+
+  
+
 }
