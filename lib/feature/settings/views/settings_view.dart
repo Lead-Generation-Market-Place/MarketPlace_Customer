@@ -11,7 +11,6 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 
 import 'package:us_connector/feature/settings/controller/setting_controller.dart';
-import 'package:us_connector/feature/settings/views/set_new_password_view.dart';
 import 'package:us_connector/main.dart';
 
 class SettingsView extends GetView<SettingsController> {
@@ -261,16 +260,14 @@ class SettingsView extends GetView<SettingsController> {
                 ListTile(
                   title: const Text('Set password'),
                   onTap: () {
-                   Get.toNamed(Routes.setNewPasswordView);
-                    // Get.off(()=>SetNewPasswordView());
+                    Get.toNamed(Routes.setNewPasswordView);
                   },
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 0),
                 ListTile(
                   title: const Text('Notification settings'),
                   onTap: () {
-                    // TODO: Implement navigation or action
-                    Get.snackbar('Selected', 'Tapped on Notification settings');
+                    Get.toNamed(Routes.notificationSettingsView);
                   },
                 ),
                 const Divider(height: 1, indent: 16, endIndent: 0),

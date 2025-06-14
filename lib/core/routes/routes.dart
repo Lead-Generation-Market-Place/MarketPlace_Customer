@@ -11,6 +11,8 @@ import 'package:us_connector/feature/one_time_initial_view/controllers/one_time_
 import 'package:us_connector/feature/plan/views/plan_view.dart';
 import 'package:us_connector/feature/search/controllers/search_binding.dart';
 import 'package:us_connector/feature/search/views/search_view.dart';
+import 'package:us_connector/feature/settings/controller/notification_settings_binding.dart';
+import 'package:us_connector/feature/settings/views/notification_settings_view.dart';
 import 'package:us_connector/feature/settings/views/set_new_password_view.dart';
 import 'package:us_connector/feature/settings/views/settings_view.dart';
 import 'package:us_connector/feature/team/views/team_view.dart';
@@ -37,6 +39,7 @@ abstract class Routes {
   static const resetPassword = '/reset-password';
   static const resetPasswordToken = '/reset-password-token';
   static const setNewPasswordView = '/set-new-password';
+  static const notificationSettingsView = '/notification-settings';
 }
 
 // Middleware
@@ -48,7 +51,7 @@ class AuthMiddleware extends GetMiddleware {
   RouteSettings? redirect(String? route) {
     final supabase = Supabase.instance.client;
     final session = supabase.auth.currentSession;
-    
+
     if (session == null) {
       return const RouteSettings(name: Routes.login);
     }
@@ -64,7 +67,7 @@ class NoAuthMiddleware extends GetMiddleware {
   RouteSettings? redirect(String? route) {
     final supabase = Supabase.instance.client;
     final session = supabase.auth.currentSession;
-    
+
     if (session != null) {
       return const RouteSettings(name: Routes.home);
     }
@@ -169,20 +172,26 @@ abstract class AppPages {
       binding: AuthBinding(),
       transition: Transition.fadeIn,
     ),
-   
+
     GetPage(
       name: Routes.resetPasswordToken,
       page: () => ResetPasswordToken(),
       binding: AuthBinding(),
       transition: Transition.fadeIn,
     ),
-     GetPage(
+    GetPage(
       name: Routes.setNewPasswordView,
       page: () => SetNewPasswordView(),
       middlewares: [AuthMiddleware()],
       transition: Transition.rightToLeft,
     ),
-
+    GetPage(
+      name: Routes.notificationSettingsView,
+      page: () => NotificationSettingsView(),
+      middlewares: [AuthMiddleware()],
+      binding: NotificationSettingBinding(),
+      transition: Transition.rightToLeft,
+    ),
   ];
 }
 

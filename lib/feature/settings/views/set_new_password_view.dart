@@ -69,7 +69,6 @@ Widget _buildTextField({
   required String label,
   required String hint,
   required TextEditingController controller,
-  bool isPassword = false,
   TextInputType? keyboardType,
   required type,
   required GlobalKey<FormState> newPasswordFormKey,
@@ -141,7 +140,7 @@ _passwordRequirements() {
       Text('Your Password must:'),
       _bulletListItem('Be at least 6 characters short and 70 characters long'),
       _bulletListItem('not contain your username or parts of your username'),
-      _bulletListItem('not contain easily guessable information'),
+      _bulletListItem('not match with your old password'),
     ],
   );
 }
