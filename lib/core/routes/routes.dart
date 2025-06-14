@@ -19,9 +19,8 @@ import 'package:us_connector/feature/team/views/team_view.dart';
 import '../../feature/splash/views/splash_view.dart';
 import '../../feature/splash/controllers/splash_controller.dart';
 import '../../feature/one_time_initial_view/views/one_time_initial_view.dart';
-import '../../feature/one_time_initial_view/controllers/one_time_initial_controller.dart';
 import '../../feature/auth/controllers/auth_binding.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../../feature/auth/controllers/auth_service.dart';
 
 // Route Names
 abstract class Routes {
@@ -49,10 +48,11 @@ class AuthMiddleware extends GetMiddleware {
 
   @override
   RouteSettings? redirect(String? route) {
-    final supabase = Supabase.instance.client;
-    final session = supabase.auth.currentSession;
 
-    if (session == null) {
+    final authService = Get.find<AuthService>();
+    
+    if (!authService.isUserAuthenticated) {
+
       return const RouteSettings(name: Routes.login);
     }
     return null;
@@ -65,10 +65,11 @@ class NoAuthMiddleware extends GetMiddleware {
 
   @override
   RouteSettings? redirect(String? route) {
-    final supabase = Supabase.instance.client;
-    final session = supabase.auth.currentSession;
 
-    if (session != null) {
+    final authService = Get.find<AuthService>();
+    
+    if (authService.isUserAuthenticated) {
+
       return const RouteSettings(name: Routes.home);
     }
     return null;
@@ -113,7 +114,7 @@ abstract class AppPages {
     GetPage(
       name: Routes.home,
       page: () => HomeView(),
-      // middlewares: [AuthMiddleware()],
+      middlewares: [AuthMiddleware()],
       binding: HomeBinding(),
       transition: Transition.fadeIn,
     ),
@@ -121,13 +122,6 @@ abstract class AppPages {
     GetPage(
       name: Routes.profile,
       page: () => PlanView(),
-      middlewares: [AuthMiddleware()],
-      transition: Transition.rightToLeft,
-    ),
-
-    GetPage(
-      name: Routes.signup,
-      page: () => SignupView(),
       middlewares: [AuthMiddleware()],
       transition: Transition.rightToLeft,
     ),
@@ -185,6 +179,7 @@ abstract class AppPages {
       middlewares: [AuthMiddleware()],
       transition: Transition.rightToLeft,
     ),
+
     GetPage(
       name: Routes.notificationSettingsView,
       page: () => NotificationSettingsView(),
@@ -192,6 +187,7 @@ abstract class AppPages {
       binding: NotificationSettingBinding(),
       transition: Transition.rightToLeft,
     ),
+
   ];
 }
 
@@ -208,7 +204,8 @@ class NavigationHelper {
   static void goBack() => Get.back();
 
   static void logout() {
-    // Add your logout logic here
+    final authService = Get.find<AuthService>();
+    authService.signOut();
     goToLogin();
   }
 }

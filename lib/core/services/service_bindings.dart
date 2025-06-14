@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 import '../controllers/theme_controller.dart';
 import '../../feature/splash/controllers/splash_controller.dart';
+import 'package:us_connector/feature/auth/controllers/auth_service.dart';
 
 class ServiceBindings extends Bindings {
   @override
@@ -27,5 +28,8 @@ class ServiceBindings extends Bindings {
 
     // Utils
     // Add your utility services here
+
+    // Initialize AuthService
+    Get.put(AuthService(), permanent: true);
   }
 } 
