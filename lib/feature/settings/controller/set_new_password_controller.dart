@@ -9,9 +9,11 @@ class SetNewPasswordController extends GetxController {
     final supabase = Supabase.instance.client;
     isLoading.value = true;
     try {
-      
       final user = supabase.auth.currentUser;
       final session = supabase.auth.currentSession;
+      if (user?.userMetadata!['username'] == newPassword) {
+        throw Exception('New password cannot be the same as the username');
+      }
       if (user?.email != null && session != null) {
         final response = await supabase.auth.updateUser(
           UserAttributes(password: newPassword),
@@ -19,6 +21,7 @@ class SetNewPasswordController extends GetxController {
         if (response.user == null) {
           throw Exception('Failed to update password');
         }
+        Get.back();
         Get.snackbar('Success', 'Password updated successfully');
       }
     } catch (e) {
