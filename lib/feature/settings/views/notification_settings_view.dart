@@ -57,6 +57,7 @@ class NotificationSettingsView extends GetView<NotificationSettingsController> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            const SizedBox(height: 40),
             _buildUserAvatar(context),
             const SizedBox(height: 40),
             _buildHeaderText(),

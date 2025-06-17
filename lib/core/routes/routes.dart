@@ -8,6 +8,7 @@ import 'package:us_connector/feature/home/controllers/home_binding.dart';
 import 'package:us_connector/feature/home/views/home_view.dart';
 import 'package:us_connector/feature/inbox/views/inbox_view.dart';
 import 'package:us_connector/feature/one_time_initial_view/controllers/one_time_initial_binding.dart';
+import 'package:us_connector/feature/plan/controller/plan_binding.dart';
 import 'package:us_connector/feature/plan/views/plan_view.dart';
 import 'package:us_connector/feature/search/controllers/search_binding.dart';
 import 'package:us_connector/feature/search/views/search_view.dart';
@@ -48,11 +49,9 @@ class AuthMiddleware extends GetMiddleware {
 
   @override
   RouteSettings? redirect(String? route) {
-
     final authService = Get.find<AuthService>();
-    
-    if (!authService.isUserAuthenticated) {
 
+    if (!authService.isUserAuthenticated) {
       return const RouteSettings(name: Routes.login);
     }
     return null;
@@ -65,11 +64,9 @@ class NoAuthMiddleware extends GetMiddleware {
 
   @override
   RouteSettings? redirect(String? route) {
-
     final authService = Get.find<AuthService>();
-    
-    if (authService.isUserAuthenticated) {
 
+    if (authService.isUserAuthenticated) {
       return const RouteSettings(name: Routes.home);
     }
     return null;
@@ -138,6 +135,7 @@ abstract class AppPages {
       name: Routes.plan,
       page: () => PlanView(),
       middlewares: [AuthMiddleware()],
+      binding: PlanBinding(),
       transition: Transition.fadeIn,
     ),
 
@@ -187,7 +185,6 @@ abstract class AppPages {
       binding: NotificationSettingBinding(),
       transition: Transition.rightToLeft,
     ),
-
   ];
 }
 

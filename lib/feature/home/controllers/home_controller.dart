@@ -24,9 +24,7 @@ class HomeController extends GetxController {
     try {
       final response = await supabase
           .from('services')
-          .select(
-            'id, name, description, service_image_url, categories!inner(*)',
-          )
+          .select('id, name, description, service_image_url')
           .order('id');
 
       if (response != null) {
