@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:us_connector/core/routes/routes.dart';
 import 'package:us_connector/core/widgets/bottom_navbar.dart';
+import 'package:us_connector/feature/plan/controller/local_plan_controller.dart';
 import 'package:us_connector/feature/plan/controller/plan_controller.dart';
+import 'package:us_connector/feature/plan/views/local_plan_view.dart';
 import 'package:us_connector/feature/plan/widgets/pic_chart.dart';
 
 class PlanView extends GetView<PlanController> {
@@ -68,11 +70,14 @@ class PlanView extends GetView<PlanController> {
   Widget _buildPlanListsSection() {
     return SliverList(
       delegate: SliverChildListDelegate([
-        _buildPlanStatusList(
-          title: 'Started Plans',
-          plans: controller.startedPlans,
-          icon: Icons.access_time,
-          color: Colors.orange,
+        InkWell(
+          onTap: () => Get.toNamed(Routes.localPlan),
+          child: _buildPlanStatusList(
+            title: 'Started Plans',
+            plans: controller.startedPlans,
+            icon: Icons.access_time,
+            color: Colors.orange,
+          ),
         ),
         _buildPlanStatusList(
           title: 'In Progress',
@@ -161,7 +166,13 @@ class PlanView extends GetView<PlanController> {
 
 Widget _buildFloatingButton() {
   return FloatingActionButton.extended(
-    onPressed: () => Get.snackbar('Progress', "Under Progress"),
+    onPressed: () {
+      LocalPlansController controller = Get.find<LocalPlansController>();
+
+      controller.isNavigatedFromCreatePlan.value =
+          true; //just to store the plan locally if the user wants
+      Get.toNamed(Routes.search);
+    },
     label: Text('Create Plan'),
   );
 }

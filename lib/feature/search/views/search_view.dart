@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' hide SearchController;
 import 'package:get/get.dart';
 import 'package:us_connector/core/widgets/bottom_navbar.dart';
+import 'package:us_connector/feature/plan/controller/local_plan_controller.dart';
 import 'package:us_connector/feature/search/controllers/search_controller.dart';
 import 'package:us_connector/core/widgets/foldable_widgets.dart';
 import 'package:us_connector/core/constants/app_colors.dart';
@@ -12,7 +13,8 @@ class SearchView extends GetView<SearchController> {
   @override
   Widget build(BuildContext context) {
     final HomeController homeController = Get.find<HomeController>();
-
+    final LocalPlansController localPlansController =
+        Get.find<LocalPlansController>(); //to Store the pans for User
     return Scaffold(
       bottomNavigationBar: BottomNavbar(),
       body: ResponsiveContainer(
@@ -33,18 +35,27 @@ class SearchView extends GetView<SearchController> {
                     hintText: 'e.g. Looking for a weekly house cleaner',
                     hintStyle: TextStyle(color: AppColors.neutral500),
                     border: InputBorder.none,
-                    prefixIcon: const Icon(Icons.search, color: AppColors.neutral500),
+                    prefixIcon: const Icon(
+                      Icons.search,
+                      color: AppColors.neutral500,
+                    ),
                     suffixIcon: Obx(
                       () => controller.showClearButton.value
                           ? IconButton(
-                              icon: const Icon(Icons.clear, color: AppColors.neutral500),
+                              icon: const Icon(
+                                Icons.clear,
+                                color: AppColors.neutral500,
+                              ),
                               onPressed: () {
                                 controller.clearSearch();
                               },
                             )
                           : const SizedBox.shrink(), // Use SizedBox.shrink() instead of null
                     ),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0), // Re-added horizontal padding for internal text field content
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 8.0,
+                    ), // Re-added horizontal padding for internal text field content
                   ),
                 ),
               ),
@@ -60,8 +71,14 @@ class SearchView extends GetView<SearchController> {
                     hintText: 'Zip Code',
                     hintStyle: TextStyle(color: AppColors.neutral500),
                     border: InputBorder.none,
-                    prefixIcon: const Icon(Icons.location_on, color: AppColors.neutral500),
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0), // Re-added horizontal padding for internal text field content
+                    prefixIcon: const Icon(
+                      Icons.location_on,
+                      color: AppColors.neutral500,
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16.0,
+                      vertical: 8.0,
+                    ), // Re-added horizontal padding for internal text field content
                   ),
                   keyboardType: TextInputType.number,
                 ),
@@ -72,69 +89,99 @@ class SearchView extends GetView<SearchController> {
                   () => controller.isLoading.value
                       ? const Center(child: CircularProgressIndicator())
                       : controller.searchController.text.isEmpty
-                          ? Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Padding(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16.0), // Retained padding for text
-                                  child: Text(
-                                    'Popular services',
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                      color: AppColors.neutral700,
-                                    ),
-                                  ),
+                      ? Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0,
+                              ), // Retained padding for text
+                              child: Text(
+                                'Popular services',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.neutral700,
                                 ),
-                                const SizedBox(height: 10),
-                                Expanded(
-                                  child: ListView.builder(
-                                    itemCount: controller.allServices.length,
-                                    itemBuilder: (context, index) {
-                                      final service = controller.allServices[index];
-                                      return Column(
-                                        children: [
-                                          ListTile(
-                                            title: Text(service['name'] ?? ''),
-                                            visualDensity: VisualDensity.compact, // Make list tile a bit smaller
-                                            contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0), // Retained horizontal padding here
-                                            onTap: () async {
-                                              if (service['id'] != null) {
-                                                await homeController.fetchQuestions(service['id']);
-                                                print('Tapped: ${service['name']}');
-                                              }
-                                            },
-                                          ),
-                                          Divider(height: 1, color: AppColors.neutral200), // Add a divider
-                                        ],
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ],
-                            )
-                          : ListView.builder(
-                              itemCount: controller.filteredServices.length,
-                              itemBuilder: (context, index) {
-                                final service = controller.filteredServices[index];
-                                return Column(
-                                  children: [
-                                    ListTile(
-                                      title: Text(service['name'] ?? ''),
-                                      visualDensity: VisualDensity.compact,
-                                      contentPadding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4.0), // Retained horizontal padding here
-                                      onTap: () async {
-                                        if (service['id'] != null) {
-                                          await homeController.fetchQuestions(service['id']);
-                                          print('Tapped: ${service['name']}');
-                                        }
-                                      },
-                                    ),
-                                    Divider(height: 1, color: AppColors.neutral200),
-                                  ],
-                                );
-                              },
+                              ),
                             ),
+                            const SizedBox(height: 10),
+                            Expanded(
+                              child: ListView.builder(
+                                itemCount: controller.allServices.length,
+                                itemBuilder: (context, index) {
+                                  final service = controller.allServices[index];
+                                  return Column(
+                                    children: [
+                                      ListTile(
+                                        title: Text(service['name'] ?? ''),
+                                        visualDensity: VisualDensity
+                                            .compact, // Make list tile a bit smaller
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                              horizontal: 16.0,
+                                              vertical: 4.0,
+                                            ), // Retained horizontal padding here
+                                        onTap: () async {
+                                          if (service['id'] != null) {
+                                            await homeController.fetchQuestions(
+                                              service['id'],
+                                            );
+                                            if (localPlansController
+                                                    .isNavigatedFromCreatePlan
+                                                    .value ==
+                                                true) {
+                                              //store local plan
+                                              localPlansController.startedPlans
+                                                  .add(service);
+                                              //restore navigation to resolve the confusion
+                                              localPlansController
+                                                      .isNavigatedFromCreatePlan
+                                                      .value =
+                                                  false;
+                                            }
+                                            print('Tapped: ${service}');
+                                          }
+                                        },
+                                      ),
+                                      Divider(
+                                        height: 1,
+                                        color: AppColors.neutral200,
+                                      ), // Add a divider
+                                    ],
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        )
+                      : ListView.builder(
+                          itemCount: controller.filteredServices.length,
+                          itemBuilder: (context, index) {
+                            final service = controller.filteredServices[index];
+                            return Column(
+                              children: [
+                                ListTile(
+                                  title: Text(service['name'] ?? ''),
+                                  visualDensity: VisualDensity.compact,
+                                  contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16.0,
+                                    vertical: 4.0,
+                                  ), // Retained horizontal padding here
+                                  onTap: () async {
+                                    if (service['id'] != null) {
+                                      await homeController.fetchQuestions(
+                                        service['id'],
+                                      );
+                                      print('Tapped: ${service['name']}');
+                                    }
+                                  },
+                                ),
+                                Divider(height: 1, color: AppColors.neutral200),
+                              ],
+                            );
+                          },
+                        ),
                 ),
               ),
             ],

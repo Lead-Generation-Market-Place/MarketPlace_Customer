@@ -50,6 +50,7 @@ dependencies:
   file_picker: ^10.2.0
   device_info_plus: ^11.4.0
   pie_chart: ^5.4.0
+  get_storage: ^2.1.1
 
 
 
