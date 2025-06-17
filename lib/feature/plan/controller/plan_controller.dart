@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class PlanController extends GetxController {
-  // Reactive state variables
   final RxBool isDarkMode = false.obs;
   final RxBool isLoading = false.obs;
   final RxList<Map<String, dynamic>> planList = <Map<String, dynamic>>[].obs;
@@ -43,7 +42,7 @@ class PlanController extends GetxController {
     try {
       final response = await _supabase
           .from('plan')
-          .select('*')
+          .select('*, services!inner(name)')
           .eq('user_id', _userId)
           .order('created_at', ascending: false);
       if (response.isEmpty) {

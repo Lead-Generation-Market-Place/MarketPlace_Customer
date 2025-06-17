@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:us_connector/core/routes/routes.dart';
 import 'package:us_connector/core/widgets/bottom_navbar.dart';
 import 'package:us_connector/feature/plan/controller/plan_controller.dart';
 import 'package:us_connector/feature/plan/widgets/pic_chart.dart';
@@ -13,6 +14,7 @@ class PlanView extends GetView<PlanController> {
       appBar: _buildAppBar(context),
       bottomNavigationBar: BottomNavbar(),
       body: _buildBody(context),
+      floatingActionButton: _buildFloatingButton(),
     );
   }
 
@@ -21,9 +23,10 @@ class PlanView extends GetView<PlanController> {
       automaticallyImplyLeading: false,
       title: Text(
         'My Plans',
-        style: Theme.of(
-          context,
-        ).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w600),
+        style: Theme.of(context).textTheme.headlineLarge?.copyWith(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+        ),
       ),
       centerTitle: true,
       elevation: 1,
@@ -134,7 +137,7 @@ class PlanView extends GetView<PlanController> {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
-        title: Text(plan['name'] ?? 'Untitled Plan'),
+        title: Text(plan['services']['name'] ?? 'Untitled Plan'),
         subtitle: Text(
           'Created: ${_formatDate(plan['created_at'])}',
           style: Get.textTheme.bodySmall,
@@ -147,12 +150,18 @@ class PlanView extends GetView<PlanController> {
 
   String _formatDate(dynamic date) {
     if (date == null) return 'Unknown date';
-    final parsed = DateTime.tryParse(date.toString());
-    return parsed != null ? '.yMMMd().format(parsed)' : 'Invalid date';
+    final parsed = DateTime.tryParse(date);
+    return parsed != null ? parsed.toString() : 'Invalid date';
   }
 
   void _navigateToPlanDetail(String planId) {
-    // Implement navigation to plan detail
-    Get.toNamed('/plan-detail/$planId');
+    Get.snackbar('Progress', "Under Progress");
   }
+}
+
+Widget _buildFloatingButton() {
+  return FloatingActionButton.extended(
+    onPressed: () => Get.snackbar('Progress', "Under Progress"),
+    label: Text('Create Plan'),
+  );
 }
