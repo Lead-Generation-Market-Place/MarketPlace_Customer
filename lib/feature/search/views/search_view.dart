@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart' hide SearchController;
 import 'package:get/get.dart';
 import 'package:us_connector/core/widgets/bottom_navbar.dart';
-import 'package:us_connector/feature/plan/controller/local_plan_controller.dart';
+import 'package:us_connector/feature/plan/controller/single_plan_controller.dart';
 import 'package:us_connector/feature/search/controllers/search_controller.dart';
 import 'package:us_connector/core/widgets/foldable_widgets.dart';
 import 'package:us_connector/core/constants/app_colors.dart';
@@ -13,8 +13,8 @@ class SearchView extends GetView<SearchController> {
   @override
   Widget build(BuildContext context) {
     final HomeController homeController = Get.find<HomeController>();
-    final LocalPlansController localPlansController =
-        Get.find<LocalPlansController>(); //to Store the pans for User
+    final SinglePlanController localPlansController =
+        Get.find<SinglePlanController>(); //to Store the pans for User
     return Scaffold(
       bottomNavigationBar: BottomNavbar(),
       body: ResponsiveContainer(
@@ -132,8 +132,9 @@ class SearchView extends GetView<SearchController> {
                                                     .value ==
                                                 true) {
                                               //store local plan
-                                              localPlansController.startedPlans
-                                                  .add(service);
+                                              localPlansController.savePlan(
+                                                service['id'],
+                                              );
                                               //restore navigation to resolve the confusion
                                               localPlansController
                                                       .isNavigatedFromCreatePlan
@@ -173,6 +174,20 @@ class SearchView extends GetView<SearchController> {
                                       await homeController.fetchQuestions(
                                         service['id'],
                                       );
+                                      if (localPlansController
+                                              .isNavigatedFromCreatePlan
+                                              .value ==
+                                          true) {
+                                        //store local plan
+                                        localPlansController.savePlan(
+                                          service['id'],
+                                        );
+                                        //restore navigation to resolve the confusion
+                                        localPlansController
+                                                .isNavigatedFromCreatePlan
+                                                .value =
+                                            false;
+                                      }
                                       print('Tapped: ${service['name']}');
                                     }
                                   },

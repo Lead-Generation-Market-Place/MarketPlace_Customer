@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -74,7 +73,6 @@ void main() {
     () async {
       await _initializeApp();
       debugPrint('Starting app...');
-      await GetStorage.init(); //Initializing the storage for local data
       runApp(const MyApp());
     },
     (error, stackTrace) {

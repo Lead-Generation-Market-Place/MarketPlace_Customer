@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:us_connector/core/routes/routes.dart';
 import 'package:us_connector/core/widgets/bottom_navbar.dart';
-import 'package:us_connector/feature/plan/controller/local_plan_controller.dart';
+import 'package:us_connector/feature/plan/controller/single_plan_controller.dart';
 import 'package:us_connector/feature/plan/controller/plan_controller.dart';
-import 'package:us_connector/feature/plan/views/local_plan_view.dart';
 import 'package:us_connector/feature/plan/widgets/pic_chart.dart';
 
 class PlanView extends GetView<PlanController> {
@@ -70,14 +69,11 @@ class PlanView extends GetView<PlanController> {
   Widget _buildPlanListsSection() {
     return SliverList(
       delegate: SliverChildListDelegate([
-        InkWell(
-          onTap: () => Get.toNamed(Routes.localPlan),
-          child: _buildPlanStatusList(
-            title: 'Started Plans',
-            plans: controller.startedPlans,
-            icon: Icons.access_time,
-            color: Colors.orange,
-          ),
+        _buildPlanStatusList(
+          title: 'Started Plans',
+          plans: controller.startedPlans,
+          icon: Icons.access_time,
+          color: Colors.orange,
         ),
         _buildPlanStatusList(
           title: 'In Progress',
@@ -148,7 +144,7 @@ class PlanView extends GetView<PlanController> {
           style: Get.textTheme.bodySmall,
         ),
         trailing: const Icon(Icons.chevron_right),
-        onTap: () => _navigateToPlanDetail(plan['id']),
+        onTap: () => _navigateToPlanDetail(plan),
       ),
     );
   }
@@ -159,18 +155,21 @@ class PlanView extends GetView<PlanController> {
     return parsed != null ? parsed.toString() : 'Invalid date';
   }
 
-  void _navigateToPlanDetail(String planId) {
-    Get.snackbar('Progress', "Under Progress");
+  void _navigateToPlanDetail(Map<String, dynamic> plan) {
+    Get.toNamed(Routes.singlePlan, arguments: plan);
   }
 }
 
 Widget _buildFloatingButton() {
   return FloatingActionButton.extended(
+    icon: Icon(Icons.add),
     onPressed: () {
-      LocalPlansController controller = Get.find<LocalPlansController>();
-
+      SinglePlanController controller = Get.find<SinglePlanController>();
+      final naveController = Get.find<BottomNavController>();
+      naveController.selectedIndex.value =
+          1; //changing the nav bar index to show the exact screen we are in
       controller.isNavigatedFromCreatePlan.value =
-          true; //just to store the plan locally if the user wants
+          true; // this line tells us that we actually wants to start plan because we are navigating from plan_view
       Get.toNamed(Routes.search);
     },
     label: Text('Create Plan'),
