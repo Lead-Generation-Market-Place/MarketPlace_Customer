@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:us_connector/core/constants/capitalize_first_letter.dart';
 import 'package:us_connector/core/constants/file_urls.dart';
 import 'package:us_connector/core/constants/screen_size.dart';
 import 'package:us_connector/feature/plan/controller/single_plan_controller.dart';
@@ -13,6 +14,7 @@ class SinglePlanView extends StatefulWidget {
 
 class _SinglePlanViewState extends State<SinglePlanView> {
   final SinglePlanController controller = Get.find();
+  late final Map<String, dynamic> service;
   late final Map<String, dynamic> plan;
 
   @override
@@ -20,11 +22,13 @@ class _SinglePlanViewState extends State<SinglePlanView> {
     super.initState();
     final args = Get.arguments;
     if (args is Map<String, dynamic> && args.containsKey('service_id')) {
+      service = args;
       plan = args;
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        controller.getPlan(plan['service_id']);
+        controller.getPlan(service['service_id']);
       });
     } else {
+      service = {};
       plan = {};
       Get.snackbar('Error', 'Invalid navigation arguments.');
     }
@@ -90,7 +94,7 @@ class _SinglePlanViewState extends State<SinglePlanView> {
   }
 
   Widget _buildServiceCard(BuildContext context) {
-    Map<dynamic, dynamic> service = controller.selectedService.value;
+    Map<dynamic, dynamic> service = controller.selectedService;
 
     return Card(
       elevation: 8,
@@ -112,61 +116,86 @@ class _SinglePlanViewState extends State<SinglePlanView> {
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
         ListTile(
-          title: Text(service['name'] ?? ""),
+          title: Text(capitalizeWords(service['name'] ?? '')),
           titleTextStyle: Theme.of(context).textTheme.headlineSmall?.copyWith(
             color: Theme.of(context).textTheme.bodyLarge?.color,
           ),
           subtitle: Padding(
             padding: const EdgeInsets.only(top: 8.0),
-            child: Text(
-              service['description'] ?? "",
-              maxLines: 4,
-              overflow: TextOverflow.ellipsis,
-              style: Theme.of(context).textTheme.bodyLarge,
+            child: SizedBox(
+              height: ScreenSize().getHeight(context) / 6,
+              width: double.infinity,
+              child: ListView(
+                children: [
+                  Text(
+                    service['description'] ?? "",
+                    style: Theme.of(context).textTheme.bodyLarge,
+                  ),
+                ],
+              ),
             ),
           ),
         ),
         const SizedBox(height: 16),
-        _buildPlanActions(service),
+        _buildPlanActions(plan),
       ],
     );
   }
 
-  Widget _buildPlanActions(Map<String, dynamic> service) {
-    final status = service['plan_status'];
+  Widget _buildPlanActions(Map<String, dynamic> plan) {
+    final status = plan['plan_status'];
     if (status == 'todo') {
       return _buildProgressPlanButtons(service);
     }
-    return _buildStartedPlanButtons(service);
+    if (status == 'active') {
+      return _buildStartedPlanButtons(service, plan);
+    } else {
+      return ElevatedButton(child: Text('Done'), onPressed: () => Get.back());
+    }
   }
 
   Widget _buildProgressPlanButtons(Map<String, dynamic> service) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        ElevatedButton(
+        ElevatedButton.icon(
+          icon: Icon(Icons.video_call_outlined),
+          style: ButtonStyle(
+            backgroundColor: WidgetStatePropertyAll(Colors.green),
+            foregroundColor: WidgetStatePropertyAll(Colors.white),
+          ),
           onPressed: () => print('Request a Call: $service'),
-          child: const Text('Request a Call'),
+          label: const Text('Request a Call'),
         ),
-        ElevatedButton(
+        ElevatedButton.icon(
+          icon: Icon(Icons.message_outlined),
           onPressed: () => print('Message: $service'),
-          child: const Text('Message'),
+          label: const Text('Message'),
         ),
       ],
     );
   }
 
-  Widget _buildStartedPlanButtons(Map<String, dynamic> service) {
+  Widget _buildStartedPlanButtons(
+    Map<String, dynamic> service,
+    Map<String, dynamic> plan,
+  ) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        ElevatedButton(
-          onPressed: () => print('Remove: $service'),
-          child: const Text('Remove'),
+        ElevatedButton.icon(
+          icon: Icon(Icons.delete_outline),
+          style: ButtonStyle(
+            backgroundColor: WidgetStatePropertyAll(Colors.red),
+            foregroundColor: WidgetStatePropertyAll(Colors.white),
+          ),
+          onPressed: () => controller.removePlan(plan),
+          label: const Text('Remove'),
         ),
-        ElevatedButton(
-          onPressed: () => print('Next: $service'),
-          child: const Text('Next'),
+        ElevatedButton.icon(
+          icon: Icon(Icons.person_pin),
+          onPressed: () => controller.hirePro(service),
+          label: const Text('Hire Pro'),
         ),
       ],
     );

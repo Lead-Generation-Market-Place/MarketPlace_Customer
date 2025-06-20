@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:us_connector/feature/home/controllers/home_controller.dart';
 
 class SinglePlanController extends GetxController {
   final RxBool isNavigatedFromCreatePlan = false.obs;
@@ -60,6 +61,55 @@ class SinglePlanController extends GetxController {
       }
     } catch (e) {
       _showSnackbar('Error', 'Exception occurred while fetching plan: $e');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  hirePro(final Map<String, dynamic> service) async {
+    if (_currentUser == null) {
+      _showSnackbar('Authentication Error', 'User is not authenticated.');
+      return;
+    }
+    try {
+      isLoading.value = true;
+      if (service.isNotEmpty) {
+        final homeControl = Get.find<HomeController>();
+        await homeControl.fetchQuestions(service['service_id']);
+      } else {
+        _showSnackbar('Not Found', "No Service Found");
+      }
+    } catch (e) {
+      _showSnackbar('Exception', 'Exception Error Ocurred $e');
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> removePlan(final Map<String, dynamic> plan) async {
+    if (_currentUser == null) {
+      _showSnackbar('Authentication Error', 'User is not authenticated.');
+      return;
+    }
+
+    isLoading.value = true;
+    try {
+      final response = await _client
+          .from('plan')
+          .delete()
+          .eq('id', plan['id'])
+          .select();
+      if (response.isEmpty) {
+        _showSnackbar(
+          'Remove Failed',
+          'Unable to Remove plan. Response: $response',
+        );
+      } else {
+        Get.back(closeOverlays: true, result: true);
+        _showSnackbar('Success', 'Plan has been successfully Deleted.');
+      }
+    } catch (e) {
+      _showSnackbar('Error', 'Exception occurred while Deleting plan: $e');
     } finally {
       isLoading.value = false;
     }

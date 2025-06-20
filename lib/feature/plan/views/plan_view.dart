@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:us_connector/core/constants/capitalize_first_letter.dart';
 import 'package:us_connector/core/routes/routes.dart';
 import 'package:us_connector/core/widgets/bottom_navbar.dart';
 import 'package:us_connector/feature/plan/controller/single_plan_controller.dart';
@@ -97,29 +98,33 @@ class PlanView extends GetView<PlanController> {
     required IconData icon,
     required Color color,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          child: Row(
-            children: [
-              Icon(icon, color: color),
-              const SizedBox(width: 8),
-              Text(
-                '$title (${plans.length})',
-                style: Get.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
+    return ExpansionTile(
+      title: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        child: Row(
+          children: [
+            Icon(icon, color: color),
+            const SizedBox(width: 8),
+            Text(
+              '$title (${plans.length})',
+              style: Get.textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.w600,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-        if (plans.isEmpty)
-          _buildEmptyState(title)
-        else
-          ...plans.map((plan) => _buildPlanItem(plan)),
-        const SizedBox(height: 24),
+      ),
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (plans.isEmpty)
+              _buildEmptyState(title)
+            else
+              ...plans.map((plan) => _buildPlanItem(plan)),
+            const SizedBox(height: 24),
+          ],
+        ),
       ],
     );
   }
@@ -138,7 +143,9 @@ class PlanView extends GetView<PlanController> {
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
-        title: Text(plan['services']['name'] ?? 'Untitled Plan'),
+        title: Text(
+          capitalizeWords(plan['services']['name']) ?? 'Untitled Plan',
+        ),
         subtitle: Text(
           'Created: ${_formatDate(plan['created_at'])}',
           style: Get.textTheme.bodySmall,
@@ -155,8 +162,11 @@ class PlanView extends GetView<PlanController> {
     return parsed != null ? parsed.toString() : 'Invalid date';
   }
 
-  void _navigateToPlanDetail(Map<String, dynamic> plan) {
-    Get.toNamed(Routes.singlePlan, arguments: plan);
+  void _navigateToPlanDetail(Map<String, dynamic> plan) async {
+    final result = await Get.toNamed(Routes.singlePlan, arguments: plan);
+    if (result == true) {
+      controller.refreshPlans();
+    }
   }
 }
 
