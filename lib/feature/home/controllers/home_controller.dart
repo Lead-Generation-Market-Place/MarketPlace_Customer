@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:logger/web.dart';
@@ -11,10 +13,13 @@ class HomeController extends GetxController {
   RxList<Map<String, dynamic>> services = <Map<String, dynamic>>[].obs;
   RxList<Map<String, dynamic>> questions = <Map<String, dynamic>>[].obs;
   RxList<Map<String, dynamic>> answers = <Map<String, dynamic>>[].obs;
+  RxList<Map<String, dynamic>> plansToDo = <Map<String, dynamic>>[].obs;
+  List planTypes = ['active', 'todo', 'done'];
   @override
   void onInit() async {
     super.onInit();
     await fetchServices();
+    await _fetchAllPlans();
   }
 
   Future<void> fetchServices() async {
@@ -95,6 +100,40 @@ class HomeController extends GetxController {
         'Failed to load questions. Please try again.',
         snackPosition: SnackPosition.BOTTOM,
       );
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<void> _fetchAllPlans() async {
+    final userId = supabase.auth.currentUser?.id ?? '';
+    if (userId.isEmpty) {
+      Get.snackbar('User', "User is Not Authenticated");
+      return;
+    }
+    final random = Random();
+    final randomIndex = random.nextInt(planTypes.length);
+    final randomPlanType = planTypes[randomIndex];
+    isLoading.value = true;
+
+    try {
+      final response = await supabase
+          .from('plan')
+          .select('*, services!inner(name)')
+          .eq('user_id', userId)
+          .eq('plan_status', randomPlanType)
+          .order('created_at', ascending: false);
+      if (response.isEmpty) {
+        Get.snackbar('Not Found', 'The Plan NOt Found for the above user');
+        plansToDo.clear();
+      } else {
+        plansToDo.assignAll(response.cast<Map<String, dynamic>>());
+        print(plansToDo);
+      }
+    } on PostgrestException catch (e) {
+      Get.snackbar('Posgree', 'Database Error Occurred');
+    } catch (e) {
+      Get.snackbar('Exception', '$e');
     } finally {
       isLoading.value = false;
     }

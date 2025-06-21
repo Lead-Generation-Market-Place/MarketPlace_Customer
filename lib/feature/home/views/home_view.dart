@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
+import 'package:us_connector/core/constants/capitalize_first_letter.dart';
+import 'package:us_connector/core/constants/date_format_helper.dart';
 import 'package:us_connector/core/routes/routes.dart';
 import 'package:us_connector/core/widgets/bottom_navbar.dart';
 import 'package:us_connector/feature/home/controllers/home_controller.dart';
@@ -61,13 +62,8 @@ class HomeView extends GetView<HomeController> {
                     filled: true,
                     fillColor: Colors.grey[100],
                   ),
-                  onChanged: (value) {
-                    // Optional: debounce or search filter
-                    print("Search: $value");
-                  },
-                  onSubmitted: (value) {
-                    print("Search submitted: $value");
-                  },
+                  onChanged: (value) {},
+                  onSubmitted: (value) {},
                 ),
               ),
               // Horizontal Services List
@@ -75,17 +71,120 @@ class HomeView extends GetView<HomeController> {
                 services: services,
                 onServiceTap: (service) async {
                   await controller.fetchQuestions(service['id']);
-                  print('Tapped: ${service['name']}');
                 },
                 itemWidth: 160,
                 itemHeight: 200,
                 imageHeight: 120,
               ),
-            
+              _buildPlans(controller, context),
             ],
           );
         }),
       ),
     );
   }
+}
+
+Widget _buildPlans(HomeController controller, BuildContext context) {
+  return Obx(() {
+    final plans = controller.plansToDo;
+    if (plans.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        child: Center(
+          child: Text(
+            "No plans to do yet.",
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: Colors.grey,
+              fontStyle: FontStyle.italic,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            "Your ${capitalizeWords(plans[0]['plan_status'])} Plans",
+            style: Theme.of(
+              context,
+            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: 12),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: plans.length > 4 ? 4 : plans.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 10),
+            itemBuilder: (context, index) {
+              final plan = plans[index];
+              final serviceName = capitalizeWords(plan['services']['name']);
+              final planDate = DateFormatHelper().formatDate(
+                plan['created_at'],
+              );
+              final planStatus = plan['plan_status'] ?? 'Pending';
+
+              return Card(
+                elevation: 2,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: Theme.of(context).primaryColorLight,
+                    child: Icon(
+                      Icons.event_note,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                  title: Text(
+                    serviceName,
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  subtitle: planDate.isNotEmpty
+                      ? Text(
+                          "Date: $planDate",
+                          style: Theme.of(context).textTheme.bodySmall,
+                        )
+                      : null,
+                  trailing: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 6,
+                    ),
+                    decoration: BoxDecoration(
+                      color: planStatus == 'active'
+                          ? Color(0xFFFF9800)
+                          : planStatus == 'todo'
+                          ? Color(0xFF2196F3)
+                          : Color(0xFF43A047),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      capitalizeWords(planStatus),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ),
+                  onTap: () {
+                    //    print('Taped plan $plan');
+                    //Navigating to Single Plan View upon request
+                  },
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  });
 }
