@@ -9,13 +9,13 @@ class PlanController extends GetxController {
 
   // Computed lists for different plan statuses
   List<Map<String, dynamic>> get startedPlans =>
-      planList.where((p) => p['plan_status'] == 'NULL').toList();
+      planList.where((p) => p['plan_status'] == 'active').toList();
 
   List<Map<String, dynamic>> get inProgressPlans =>
-      planList.where((p) => p['plan_status'] == 'Active').toList();
+      planList.where((p) => p['plan_status'] == 'todo').toList();
 
   List<Map<String, dynamic>> get donePlans =>
-      planList.where((p) => p['plan_status'] == 'Done').toList();
+      planList.where((p) => p['plan_status'] == 'done').toList();
 
   final SupabaseClient _supabase = Supabase.instance.client;
   final String _userId;

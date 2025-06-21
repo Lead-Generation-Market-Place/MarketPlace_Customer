@@ -8,7 +8,9 @@ import 'package:us_connector/feature/home/controllers/home_binding.dart';
 import 'package:us_connector/feature/home/views/home_view.dart';
 import 'package:us_connector/feature/inbox/views/inbox_view.dart';
 import 'package:us_connector/feature/one_time_initial_view/controllers/one_time_initial_binding.dart';
+import 'package:us_connector/feature/plan/controller/single_plan_binding.dart';
 import 'package:us_connector/feature/plan/controller/plan_binding.dart';
+import 'package:us_connector/feature/plan/views/single_plan_view.dart';
 import 'package:us_connector/feature/plan/views/plan_view.dart';
 import 'package:us_connector/feature/search/controllers/search_binding.dart';
 import 'package:us_connector/feature/search/views/search_view.dart';
@@ -34,6 +36,8 @@ abstract class Routes {
   static const settings = '/settings';
   static const search = '/search';
   static const plan = '/plan';
+  static const singlePlan = '/singlePlan';
+
   static const inbox = '/inbox';
   static const team = '/team';
   static const resetPassword = '/reset-password';
@@ -127,7 +131,10 @@ abstract class AppPages {
       name: Routes.search,
       page: () => SearchView(),
       middlewares: [AuthMiddleware()],
-      binding: SearchBinding(),
+      bindings: [
+        SearchBinding(),
+        SinglePlanBinding(),
+      ], //Single Plan Binding here to update the index of the nav bar when navigating
       transition: Transition.downToUp,
     ),
 
@@ -135,10 +142,16 @@ abstract class AppPages {
       name: Routes.plan,
       page: () => PlanView(),
       middlewares: [AuthMiddleware()],
-      binding: PlanBinding(),
+      bindings: [PlanBinding(), SinglePlanBinding()],
       transition: Transition.fadeIn,
     ),
-
+    GetPage(
+      name: Routes.singlePlan,
+      page: () => SinglePlanView(),
+      middlewares: [AuthMiddleware()],
+      binding: SinglePlanBinding(),
+      transition: Transition.rightToLeftWithFade,
+    ),
     GetPage(
       name: Routes.settings,
       page: () => SettingsView(),
