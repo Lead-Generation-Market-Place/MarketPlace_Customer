@@ -4,58 +4,68 @@ import 'package:us_connector/core/constants/app_colors.dart';
 import 'package:us_connector/core/widgets/custom_button.dart';
 import 'package:us_connector/feature/settings/controller/set_new_password_controller.dart';
 
-class SetNewPasswordView extends GetView<SetNewPasswordController> {
+class SetNewPasswordView extends StatelessWidget {
   SetNewPasswordView({super.key});
+
   final TextEditingController newPasswordController = TextEditingController();
   final TextEditingController confirmNewPasswordController =
       TextEditingController();
   final GlobalKey<FormState> passwordValidationKey = GlobalKey<FormState>();
 
+  final controller = Get.put(SetNewPasswordController());
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Set Password'),
+        title: const Text('Set Password'),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () => Get.back(),
         ),
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.only(
-            top: 16.0,
-            left: 16.0,
-            right: 16.0,
-            bottom: 0,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 16.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Form(
-                    key: passwordValidationKey,
-                    child: Column(
-                      children: [
-                        _textFormField(newPasswordController, 'New Password'),
-                        const SizedBox(height: 16),
-                        _confirmPasswordFormField(
-                          confirmNewPasswordController,
-                          'Confirm New Password',
-                          newPasswordController,
-                        ),
-                      ],
+              Form(
+                key: passwordValidationKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    PasswordField(
+                      controller: newPasswordController,
+                      hintText: 'New Password',
+                      onChanged: controller.validatePassword,
+                      isVisible: controller.isPasswordVisible,
+                      toggleVisibility: controller.togglePasswordVisibility,
                     ),
-                  ),
-                  SizedBox(height: 16),
-                  _passwordRequirements(), //Password requirements
-                ],
+                    const SizedBox(height: 16),
+                    PasswordField(
+                      controller: confirmNewPasswordController,
+                      hintText: 'Confirm New Password',
+                      onChanged: (value) {
+                        controller.isPasswordMatch.value =
+                            confirmNewPasswordController.text ==
+                            newPasswordController.text;
+                        controller.validateConfirmPassword(
+                          value,
+                          newPasswordController.text,
+                        );
+                      },
+                      isVisible: controller.isConfirmPasswordVisible,
+                      toggleVisibility:
+                          controller.toggleConfirmPasswordVisibility,
+                    ),
+                    const SizedBox(height: 16),
+                    const PasswordRequirements(),
+                  ],
+                ),
               ),
               Obx(
                 () => CustomButton(
-                  //Button to save the new password
                   text: 'Save Password',
                   isLoading: controller.isLoading.value,
                   onPressed: () {
@@ -75,193 +85,119 @@ class SetNewPasswordView extends GetView<SetNewPasswordController> {
   }
 }
 
-Widget _textFormField(
-  TextEditingController passwordController,
-  String hintText,
-) {
-  var isPasswordController = Get.put(SetNewPasswordController());
-  return Obx(
-    () => SizedBox(
-      child: TextFormField(
-        onChanged: (value) {
-          if (passwordController.text.length >= 6 &&
-              passwordController.text.length <= 70) {
-            isPasswordController.isPasswordBetweenSixAndSeventy.value = true;
-          } else {
-            isPasswordController.isPasswordBetweenSixAndSeventy.value = false;
-          }
-          if (passwordController.text.contains(RegExp(r'[A-Z]'))) {
-            isPasswordController.isPasswordContainsUppercase.value = true;
-          } else {
-            isPasswordController.isPasswordContainsUppercase.value = false;
-          }
-          if (passwordController.text.contains(RegExp(r'[a-z]'))) {
-            isPasswordController.isPasswordContainsLowercase.value = true;
-          } else {
-            isPasswordController.isPasswordContainsLowercase.value = false;
-          }
-          if (passwordController.text.contains(RegExp(r'[0-9]'))) {
-            isPasswordController.isPasswordContainsNumber.value = true;
-          } else {
-            isPasswordController.isPasswordContainsNumber.value = false;
-          }
-          if (passwordController.text.contains(
-            RegExp(r'[!@#$%^&*(),.?":{}|<>]'),
-          )) {
-            isPasswordController.isPasswordContainsSpecialCharacter.value =
-                true;
-          } else {
-            isPasswordController.isPasswordContainsSpecialCharacter.value =
-                false;
-          }
-          isPasswordController.checkOldPassword(passwordController.text);
-          isPasswordController.checkUserName(passwordController.text);
-        },
+class PasswordField extends StatelessWidget {
+  final TextEditingController controller;
+  final String hintText;
+  final ValueChanged<String> onChanged;
+  final RxBool isVisible;
+  final VoidCallback toggleVisibility;
 
-        controller: passwordController,
-        obscureText: isPasswordController.isPasswordVisible.value,
-        keyboardType: TextInputType.text,
-        style: TextStyle(color: AppColors.textPrimary),
-        decoration: InputDecoration(
-          hintText: hintText,
-          hintStyle: TextStyle(color: AppColors.textTertiary),
-          suffixIcon: InkWell(
-            onTap: () {
-              isPasswordController.isPasswordVisible.value =
-                  !isPasswordController.isPasswordVisible.value;
-            },
-            child: _showHidePasswordIcon(
-              isPasswordController.isPasswordVisible.value,
-            ),
-          ),
-          filled: true,
-          fillColor: AppColors.surface,
-        ),
-      ),
-    ),
-  );
-}
+  const PasswordField({
+    super.key,
+    required this.controller,
+    required this.hintText,
+    required this.onChanged,
+    required this.isVisible,
+    required this.toggleVisibility,
+  });
 
-Widget _confirmPasswordFormField(
-  TextEditingController confirmController,
-  String hintText,
-  TextEditingController originalController,
-) {
-  var isPasswordController = Get.put(SetNewPasswordController());
-  return SizedBox(
-    child: Obx(
+  @override
+  Widget build(BuildContext context) {
+    return Obx(
       () => TextFormField(
-        onChanged: (value) {
-          if (confirmController.text == originalController.text) {
-            isPasswordController.isPasswordMatch.value = true;
-          } else {
-            isPasswordController.isPasswordMatch.value = false;
-          }
-        },
-        controller: confirmController,
-        obscureText: isPasswordController.isConfirmPasswordVisible.value,
+        controller: controller,
+        onChanged: onChanged,
+        obscureText: !isVisible.value,
         keyboardType: TextInputType.text,
         style: TextStyle(color: AppColors.textPrimary),
         decoration: InputDecoration(
           hintText: hintText,
           hintStyle: TextStyle(color: AppColors.textTertiary),
           suffixIcon: InkWell(
-            onTap: () {
-              isPasswordController.isConfirmPasswordVisible.value =
-                  !isPasswordController.isConfirmPasswordVisible.value;
-            },
-            child: _showHidePasswordIcon(
-              isPasswordController.isConfirmPasswordVisible.value,
+            onTap: toggleVisibility,
+            child: Icon(
+              isVisible.value
+                  ? Icons.visibility_off_outlined
+                  : Icons.visibility_outlined,
+              color: AppColors.textTertiary,
             ),
           ),
           filled: true,
           fillColor: AppColors.surface,
         ),
       ),
-    ),
-  );
+    );
+  }
 }
 
-_passwordRequirements() {
-  final controller = Get.find<SetNewPasswordController>();
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text('Your Password must:'),
-      _bulletListItem(
-        'Be at least 6 characters short and 70 characters long',
-        controller.isPasswordBetweenSixAndSeventy,
-      ),
-      _bulletListItem(
-        'Contain an uppercase letter',
-        controller.isPasswordContainsUppercase,
-      ),
-      _bulletListItem(
-        'Contain a lowercase letter',
-        controller.isPasswordContainsLowercase,
-      ),
-      _bulletListItem('Contain a number', controller.isPasswordContainsNumber),
-      _bulletListItem(
-        'Contain a special character',
-        controller.isPasswordContainsSpecialCharacter,
-      ),
-      _bulletListItem(
-        'Not contain your username or parts of your username',
-        controller
-            .isPasswordNotSameAsUsername, // You can implement this logic as needed
-      ),
-      _bulletListItem(
-        'Not match with your old password',
-        controller.isPasswordOld, // You can implement this logic as needed
-      ),
-      _bulletListItem(
-        'Confirm Password must match',
-        controller.isPasswordMatch, // You can implement this logic as needed
-      ),
-    ],
-  );
+class PasswordRequirements extends StatelessWidget {
+  const PasswordRequirements({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = Get.find<SetNewPasswordController>();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Your Password must:'),
+        _RequirementItem(
+          text: 'Be 6–70 characters',
+          condition: controller.isPasswordBetweenSixAndSeventy,
+        ),
+        _RequirementItem(
+          text: 'Contain an uppercase letter',
+          condition: controller.isPasswordContainsUppercase,
+        ),
+        _RequirementItem(
+          text: 'Contain a lowercase letter',
+          condition: controller.isPasswordContainsLowercase,
+        ),
+        _RequirementItem(
+          text: 'Contain a number',
+          condition: controller.isPasswordContainsNumber,
+        ),
+        _RequirementItem(
+          text: 'Contain a special character',
+          condition: controller.isPasswordContainsSpecialCharacter,
+        ),
+        _RequirementItem(
+          text: 'Not contain your username',
+          condition: controller.isPasswordNotSameAsUsername,
+        ),
+        _RequirementItem(
+          text: 'Not match your old password',
+          condition: controller.isPasswordOld,
+        ),
+        _RequirementItem(
+          text: 'Confirm password must match',
+          condition: controller.isPasswordMatch,
+        ),
+      ],
+    );
+  }
 }
 
-Widget _bulletListItem(String text, RxBool? isMet) {
-  return Row(
-    children: [
-      SizedBox(
-        height: 12,
-        width: 12,
-        child: isMet == null
-            ? Container(
-                margin: const EdgeInsets.all(4.0),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: Colors.grey,
-                ),
-              )
-            : Obx(
-                () => isMet.value
-                    ? Icon(Icons.done, color: Colors.green, size: 12.0)
-                    : Container(
-                        margin: const EdgeInsets.all(4.0),
-                        decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          color: Colors.grey,
-                        ),
-                      ),
-              ),
+class _RequirementItem extends StatelessWidget {
+  final String text;
+  final RxBool condition;
+
+  const _RequirementItem({required this.text, required this.condition});
+
+  @override
+  Widget build(BuildContext context) {
+    return Obx(
+      () => Row(
+        children: [
+          Icon(
+            condition.value ? Icons.done : Icons.circle,
+            color: condition.value ? Colors.green : Colors.grey,
+            size: 12,
+          ),
+          const SizedBox(width: 8),
+          Flexible(child: Text(text)),
+        ],
       ),
-      const SizedBox(width: 8),
-      Flexible(child: Text(text)),
-    ],
-  );
-}
-
-_showHidePasswordIcon(bool isPasswordVisible) {
-  return isPasswordVisible
-      ? Icon(Icons.visibility_off_outlined, color: AppColors.textTertiary)
-      : Icon(Icons.visibility_outlined, color: AppColors.textTertiary);
-}
-
-_showHideConfirmPasswordIcon(bool isPasswordVisible) {
-  return isPasswordVisible
-      ? Icon(Icons.visibility_off_outlined, color: AppColors.textTertiary)
-      : Icon(Icons.visibility_outlined, color: AppColors.textTertiary);
+    );
+  }
 }
