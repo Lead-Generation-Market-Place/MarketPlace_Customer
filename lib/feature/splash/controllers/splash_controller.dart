@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
+import 'package:local_auth/local_auth.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:us_connector/core/controllers/biometric_auth_controller.dart';
 import '../../../core/routes/routes.dart';
 import '../../../core/utils/app_constants.dart';
 import '../../../feature/auth/controllers/auth_service.dart';
@@ -14,18 +16,20 @@ class SplashController extends GetxController {
     super.onInit();
     _prefs = Get.find<SharedPreferences>();
     _initializeApp();
+    isFingerPrintEnabled();
   }
 
   Future<void> _initializeApp() async {
     try {
       isInitialized.value = true;
       debugPrint('Splash: Starting initialization');
-      
+
       // Add a small delay to show splash screen
       await Future.delayed(const Duration(seconds: 2));
 
       // First, check if onboarding is completed
-      final hasCompletedOnboarding = _prefs.getBool(AppConstants.onboardingCompleteKey) ?? false;
+      final hasCompletedOnboarding =
+          _prefs.getBool(AppConstants.onboardingCompleteKey) ?? false;
       debugPrint('Splash: Onboarding completed: $hasCompletedOnboarding');
 
       if (!hasCompletedOnboarding) {
@@ -57,4 +61,12 @@ class SplashController extends GetxController {
     await _prefs.setBool(AppConstants.onboardingCompleteKey, true);
     Get.offAllNamed(Routes.login);
   }
-} 
+
+  Future<bool> isFingerPrintEnabled() async {
+    if (_prefs.containsKey(AppConstants.isBiometricKey)) {
+      return BiometricAuthController().authenticate();
+    } else {
+      return false;
+    }
+  }
+}

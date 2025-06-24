@@ -47,6 +47,8 @@
 
 <key>NSPhotoLibraryUsageDescription</key>
 <string>We need access to your photo library to select images.</string> -->
+	<key>NSFaceIDUsageDescription</key>
+	<string>We use Face ID to protect your data.</string>
 
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>

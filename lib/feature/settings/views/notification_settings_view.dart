@@ -100,7 +100,7 @@ class NotificationSettingsView extends GetView<NotificationSettingsController> {
   Widget _buildNotificationSwitches() {
     return Expanded(
       child: ListView.separated(
-        itemCount: 10,
+        itemCount: 1,
         separatorBuilder: (context, index) => const Divider(
           indent: 10,
           endIndent: 10,
@@ -108,10 +108,12 @@ class NotificationSettingsView extends GetView<NotificationSettingsController> {
           height: 1,
         ),
         itemBuilder: (context, index) {
-          return _buildSwitchTile(
-            title: 'Feature ${index + 1}',
-            value: index.isEven,
-            onChanged: (value) => _handleSwitchChanged(index, value),
+          return Obx(
+            () => _buildSwitchTile(
+              title: 'Can Use Biometric Authentication',
+              value: controller.isBiometricAvailable.value,
+              onChanged: (value) => controller.toggleBiometricAvailability(),
+            ),
           );
         },
       ),
@@ -239,11 +241,6 @@ class NotificationSettingsView extends GetView<NotificationSettingsController> {
 
   void _handleLogOutTap() {
     _closeSheetAndShowSnackbar('Log Out pressed');
-  }
-
-  void _handleSwitchChanged(int index, bool value) {
-    debugPrint('Feature ${index + 1} changed to $value');
-    //Switch chaning logic can be added here for now empty
   }
 
   void _closeSheetAndShowSnackbar(String message) {
