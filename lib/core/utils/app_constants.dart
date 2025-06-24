@@ -2,16 +2,18 @@ class AppConstants {
   // App Info
   static const String appName = 'Yalpax';
   static const String appVersion = '1.0.0';
-  
+
   // API Endpoints
   static const String supabaseUrl = 'https://hdwfpfxyzubfksctezkz.supabase.co';
-  static const String supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhkd2ZwZnh5enViZmtzY3Rlemt6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc5NDE3NzQsImV4cCI6MjA2MzUxNzc3NH0.tQ8XB__I-tOypaOUzlVd9XG0ldI21Lvu2LjfpF3UgLM';
+  static const String supabaseAnonKey =
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhkd2ZwZnh5enViZmtzY3Rlemt6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc5NDE3NzQsImV4cCI6MjA2MzUxNzc3NH0.tQ8XB__I-tOypaOUzlVd9XG0ldI21Lvu2LjfpF3UgLM';
 
   // Storage Keys
   static const String themeKey = 'theme_mode';
   static const String localeKey = 'locale';
   static const String onboardingCompleteKey = 'onboarding_complete';
   static const String userTokenKey = 'user_token';
+  static const String isBiometricKey = 'isBiometric';
 
   // Timeouts
   static const int connectionTimeout = 30000; // 30 seconds
@@ -43,4 +45,4 @@ class AppConstants {
 
   // Private constructor to prevent instantiation
   AppConstants._();
-} 
+}
