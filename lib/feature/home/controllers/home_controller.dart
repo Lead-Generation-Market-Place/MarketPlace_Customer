@@ -5,6 +5,7 @@ import 'package:get/get.dart';
 import 'package:logger/web.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:us_connector/core/components/question_component.dart';
+import 'package:us_connector/core/routes/routes.dart';
 
 class HomeController extends GetxController {
   final supabase = Supabase.instance.client;
@@ -86,10 +87,12 @@ class HomeController extends GetxController {
           final result = await Get.to(
             () => QuestionFlowScreen(questions: parsedQuestions),
           );
-          Logger().d('Answers of questions :-  $result');
+
           Fluttertoast.showToast(msg: '$result');
           if (result != null) {
             handleQuestionFlowAnswers(result);
+            //Navigating to find the professional screen and passing the answers
+            Get.toNamed(Routes.professionalView, arguments: serviceId);
           }
         }
       }
