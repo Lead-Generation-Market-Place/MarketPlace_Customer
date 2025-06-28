@@ -1,5 +1,3 @@
-import 'dart:developer';
-
 import 'package:get/get.dart';
 import 'package:logger/web.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -54,7 +52,18 @@ class ProfessionalController extends GetxController {
           .select('*, users_profiles!inner(*)')
           .eq('service_id', serviceId)
           .order('id', ascending: false);
-      professionals.value = List<Map<String, dynamic>>.from(response);
+      //  professionals.value = List<Map<String, dynamic>>.from(response);
+
+      List professionalUsersId = response.map((e) => e['user_id']).toList();
+      if (professionalUsersId.isNotEmpty) {
+        final serviceProviders = await _supabase.client
+            .from('service_providers')
+            .select()
+            .inFilter('user_id', professionalUsersId);
+
+        professionals.value = serviceProviders;
+        print("professionals: $professionals");
+      }
     } catch (e) {
       Logger().w('Failed to fetch professionals by service: $e');
       Get.snackbar('Error', 'Failed to fetch professionals');

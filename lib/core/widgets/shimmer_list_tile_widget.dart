@@ -19,13 +19,6 @@ class ShimmerListTileWidget extends StatelessWidget {
     final count = defultCount ?? 12;
     return SizedBox(
       width: w,
-      // If you want this widget to be scrollable independently, uncomment the next line and comment out the Column below:
-      // child: SingleChildScrollView(
-      //   child: Column(
-      //     children: List.generate(count, (index) => _buildShimmerTile(h, w)),
-      //   ),
-      // ),
-      // If the parent is already scrollable (e.g., inside a ListView/Sliver), just use Column:
       child: Column(
         children: List.generate(count, (index) => _buildShimmerTile(h, w)),
       ),
