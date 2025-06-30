@@ -4,7 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ProfessionalController extends GetxController {
   final Supabase _supabase = Supabase.instance;
-  final RxList<Map<String, dynamic>> serviceData = <Map<String, dynamic>>[].obs;
+  final RxMap<String, dynamic> serviceData = <String, dynamic>{}.obs;
   final RxList<Map<String, dynamic>> professionals =
       <Map<String, dynamic>>[].obs;
   final RxList<Map<String, dynamic>> professionalsByArea =
@@ -22,7 +22,7 @@ class ProfessionalController extends GetxController {
   Future<void> _initData() async {
     await fetchServiceData();
     await fetchProfessionalsByService();
-    await fetchProfessionalsByZip('1002'); // Consider making zip dynamic
+    await fetchProfessionalsByZip('12345'); // Consider making zip dynamic
   }
 
   /// Fetch service details by serviceId
@@ -34,7 +34,7 @@ class ProfessionalController extends GetxController {
           .select()
           .eq('id', serviceId)
           .single();
-      serviceData.value = [response];
+      serviceData.value = response;
     } catch (e) {
       Logger().w('Failed to fetch service data: $e');
       Get.snackbar('Error', 'Failed to fetch service data');
@@ -62,7 +62,6 @@ class ProfessionalController extends GetxController {
             .inFilter('user_id', professionalUsersId);
 
         professionals.value = serviceProviders;
-        print("professionals: $professionals");
       }
     } catch (e) {
       Logger().w('Failed to fetch professionals by service: $e');
@@ -85,6 +84,8 @@ class ProfessionalController extends GetxController {
         professionalsByArea.clear();
         return;
       }
+      Logger().d('at first step locations that got: $locations');
+
       // Get provider IDs with those locations
       final locationIds = locations.map((l) => l['id']).toList();
       final providers = await _supabase.client
@@ -95,6 +96,8 @@ class ProfessionalController extends GetxController {
         professionalsByArea.clear();
         return;
       }
+      Logger().d('at second step service providers that got: $locationIds');
+
       final providerIds = providers.map((p) => p['provider_id']).toList();
       // Get professionals offering the service in those locations
       final response = await _supabase.client
