@@ -12,6 +12,8 @@ import 'package:us_connector/feature/plan/controller/single_plan_binding.dart';
 import 'package:us_connector/feature/plan/controller/plan_binding.dart';
 import 'package:us_connector/feature/plan/views/single_plan_view.dart';
 import 'package:us_connector/feature/plan/views/plan_view.dart';
+import 'package:us_connector/feature/professional/controllers/professional_binding.dart';
+import 'package:us_connector/feature/professional/screens/professional_view.dart';
 import 'package:us_connector/feature/search/controllers/search_binding.dart';
 import 'package:us_connector/feature/search/views/search_view.dart';
 import 'package:us_connector/feature/settings/controller/notification_settings_binding.dart';
@@ -44,6 +46,7 @@ abstract class Routes {
   static const resetPasswordToken = '/reset-password-token';
   static const setNewPasswordView = '/set-new-password';
   static const notificationSettingsView = '/notification-settings';
+  static const professionalView = '/professional-view';
 }
 
 // Middleware
@@ -123,6 +126,13 @@ abstract class AppPages {
     GetPage(
       name: Routes.profile,
       page: () => PlanView(),
+      middlewares: [AuthMiddleware()],
+      transition: Transition.rightToLeft,
+    ),
+    GetPage(
+      name: Routes.professionalView,
+      page: () => ProfessionalView(),
+      binding: ProfessionalBinding(),
       middlewares: [AuthMiddleware()],
       transition: Transition.rightToLeft,
     ),
