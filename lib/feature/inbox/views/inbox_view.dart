@@ -1,8 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:timeago/timeago.dart' as timeago;
 import 'package:us_connector/core/constants/file_urls.dart';
-import 'package:us_connector/core/constants/screen_size.dart';
+import 'package:us_connector/core/routes/routes.dart';
 import 'package:us_connector/core/widgets/bottom_navbar.dart';
 import 'package:us_connector/feature/inbox/controller/inbox_controller.dart';
 
@@ -38,12 +39,18 @@ Widget _buildConversationsList(
   return ListView.separated(
     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
     itemCount: controller.conversations.length,
-    separatorBuilder: (_, __) => const Divider(height: 1),
+    separatorBuilder: (_, __) => const Divider(height: 1, color: Colors.grey),
     itemBuilder: (context, index) {
       final professional = controller.conversations[index]['professional'];
       final customer = controller.conversations[index]['customer'];
       return ListTile(
-        onTap: () => print(professional),
+        onTap: () => Get.toNamed(
+          Routes.singleChatView,
+          arguments: {
+            'senderId': controller.conversations[index]['professional_id'],
+            'conversationId': controller.conversations[index]['id'],
+          },
+        ),
         leading: ClipOval(
           child: CachedNetworkImage(
             fit: BoxFit.cover,
@@ -77,13 +84,14 @@ Widget _buildConversationsList(
               : '',
           style: Theme.of(context).textTheme.bodySmall,
         ),
-        trailing: const Icon(
-          Icons.arrow_forward_ios,
-          size: 18,
-          color: Colors.deepPurple,
-        ),
+
         contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        trailing: Text(
+          timeago.format(
+            DateTime.parse(controller.conversations[index]['created_at']),
+          ),
+        ),
       );
     },
   );

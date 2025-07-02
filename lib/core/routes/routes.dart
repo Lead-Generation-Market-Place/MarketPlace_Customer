@@ -7,7 +7,9 @@ import 'package:us_connector/feature/auth/views/signup.dart';
 import 'package:us_connector/feature/home/controllers/home_binding.dart';
 import 'package:us_connector/feature/home/views/home_view.dart';
 import 'package:us_connector/feature/inbox/controller/inbox_binding.dart';
+import 'package:us_connector/feature/inbox/controller/single_chat_binding.dart';
 import 'package:us_connector/feature/inbox/views/inbox_view.dart';
+import 'package:us_connector/feature/inbox/views/single_chat_view.dart';
 import 'package:us_connector/feature/one_time_initial_view/controllers/one_time_initial_binding.dart';
 import 'package:us_connector/feature/plan/controller/single_plan_binding.dart';
 import 'package:us_connector/feature/plan/controller/plan_binding.dart';
@@ -42,6 +44,7 @@ abstract class Routes {
   static const singlePlan = '/singlePlan';
 
   static const inbox = '/inbox';
+  static const singleChatView = '/single-chat-view';
   static const team = '/team';
   static const resetPassword = '/reset-password';
   static const resetPasswordToken = '/reset-password-token';
@@ -173,6 +176,13 @@ abstract class AppPages {
       name: Routes.inbox,
       page: () => InboxView(),
       binding: InboxBinding(),
+      middlewares: [AuthMiddleware()],
+      transition: Transition.fadeIn,
+    ),
+    GetPage(
+      name: Routes.singleChatView,
+      page: () => SingleChatView(),
+      binding: SingleChatBinding(),
       middlewares: [AuthMiddleware()],
       transition: Transition.fadeIn,
     ),

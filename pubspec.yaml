@@ -52,6 +52,7 @@ dependencies:
   pie_chart: ^5.4.0
   local_auth: ^2.3.0
   shimmer: ^3.0.0
+  timeago: ^3.7.1
 
 
 
