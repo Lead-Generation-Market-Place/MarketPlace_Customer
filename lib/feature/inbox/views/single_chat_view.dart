@@ -1,6 +1,10 @@
+import 'dart:io';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:us_connector/feature/inbox/controller/single_chat_controller.dart';
+import 'package:intl/intl.dart';
 
 class SingleChatView extends GetView<SingleChatController> {
   const SingleChatView({super.key});
@@ -9,11 +13,14 @@ class SingleChatView extends GetView<SingleChatController> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Chat")),
-      body: Column(
-        children: const [
-          Expanded(child: _MessagesList()),
-          _SendMessageInput(),
-        ],
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(child: _MessagesList()),
+            _buildPickedImages(),
+            _SendMessageInput(),
+          ],
+        ),
       ),
     );
   }
@@ -26,65 +33,81 @@ class _MessagesList extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.find<SingleChatController>();
 
-    return Obx(() {
-      if (controller.isLoading.value) {
-        return const Center(child: CircularProgressIndicator());
-      }
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: controller.messagesStream,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return const Center(child: Text('No messages yet.'));
+        }
+        final messages = snapshot.data!;
+        return ListView.builder(
+          reverse: true,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          itemCount: messages.length,
+          itemBuilder: (context, index) {
+            final msg = messages[index];
+            final date = DateTime.parse(msg['sent_at']);
+            final sentAt = DateFormat.Hm().format(date);
+            final isMe = msg['sender_id'] == controller.myUserId;
 
-      if (controller.messages.isEmpty) {
-        return const Center(child: Text('No messages yet.'));
-      }
+            return Align(
+              alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+              child: Container(
+                margin: const EdgeInsets.symmetric(vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: isMe ? Colors.blue : Colors.grey[300],
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: isMe
+                      ? CrossAxisAlignment.end
+                      : CrossAxisAlignment.start,
+                  children: [
+                    if (msg['file_url'] != null &&
+                        msg['file_url'].toString().toLowerCase() != 'null')
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 6),
+                        child: CachedNetworkImage(
+                          width: 180,
+                          progressIndicatorBuilder: (context, url, progress) {
+                            return LinearProgressIndicator(
+                              value: progress.progress,
+                              minHeight: 4,
+                            );
+                          },
+                          imageUrl: msg['file_url'],
 
-      return ListView.builder(
-        reverse: false,
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        itemCount: controller.messages.length,
-        itemBuilder: (context, index) {
-          final msg = controller.messages[index];
-          final isMe = msg['sender_id'] == controller.isMe.value;
-
-          return Align(
-            alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-            child: Container(
-              margin: const EdgeInsets.symmetric(vertical: 4),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-              decoration: BoxDecoration(
-                color: isMe ? Colors.green : Colors.grey[300],
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                crossAxisAlignment: isMe
-                    ? CrossAxisAlignment.end
-                    : CrossAxisAlignment.start,
-                children: [
-                  if (msg['file_url'] != null &&
-                      msg['file_url'].toString().toLowerCase() != 'null')
-                    Padding(
-                      padding: const EdgeInsets.only(bottom: 6),
-                      child: Image.network(
-                        msg['file_url'],
-                        width: 180,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) =>
-                            const Icon(Icons.broken_image),
+                          errorWidget: (context, url, error) =>
+                              Icon(Icons.error_outline, color: Colors.red),
+                        ),
+                      ),
+                    Text(
+                      msg['message'] ?? '',
+                      style: TextStyle(
+                        fontSize: 15,
+                        color: isMe ? Colors.white : Colors.black,
                       ),
                     ),
-                  Text(
-                    msg['message'] ?? '',
-                    style: const TextStyle(fontSize: 15),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    msg['sent_at']?.toString().substring(0, 16) ?? '',
-                    style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-                  ),
-                ],
+                    const SizedBox(height: 2),
+                    Text(
+                      sentAt,
+                      style: TextStyle(fontSize: 10, color: Colors.grey[100]),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          );
-        },
-      );
-    });
+            );
+          },
+        );
+      },
+    );
   }
 }
 
@@ -107,9 +130,6 @@ class _SendMessageInputState extends State<_SendMessageInput> {
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<SingleChatController>();
-    final senderId = controller.isMe.value;
-    final conversationId = controller.conversationId.value;
-
     return Padding(
       padding: const EdgeInsets.all(12.0),
       child: Row(
@@ -117,10 +137,14 @@ class _SendMessageInputState extends State<_SendMessageInput> {
           Expanded(
             child: TextField(
               controller: messageController,
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
+                prefixIcon: InkWell(
+                  onTap: () => _chooseImages(controller),
+                  child: const Icon(Icons.image_outlined),
+                ),
                 hintText: 'Type your message...',
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(
+                border: const OutlineInputBorder(),
+                contentPadding: const EdgeInsets.symmetric(
                   horizontal: 12,
                   vertical: 8,
                 ),
@@ -140,12 +164,8 @@ class _SendMessageInputState extends State<_SendMessageInput> {
                     color: Colors.blue,
                     onPressed: () async {
                       final text = messageController.text.trim();
-                      if (text.isNotEmpty) {
-                        await controller.sendMessage(
-                          text,
-                          senderId,
-                          conversationId,
-                        );
+                      if (text.isNotEmpty || controller.images.isNotEmpty) {
+                        await controller.sendMessage(text);
                         messageController.clear();
                       }
                     },
@@ -155,4 +175,77 @@ class _SendMessageInputState extends State<_SendMessageInput> {
       ),
     );
   }
+}
+
+Future<void> _chooseImages(SingleChatController controller) async {
+  try {
+    final result = await FilePicker.platform.pickFiles(
+      allowMultiple: true,
+      type: FileType.image,
+    );
+
+    if (result != null && result.files.isNotEmpty) {
+      final pickedFiles = result.paths
+          .whereType<String>()
+          .map((path) => File(path))
+          .toList();
+
+      controller.images.assignAll(pickedFiles);
+      print('Picked images: ${controller.images}');
+    }
+  } catch (e) {
+    print('Error picking images: $e');
+  }
+}
+
+Widget _buildPickedImages() {
+  final controller = Get.find<SingleChatController>();
+
+  return Obx(() {
+    if (controller.images.isEmpty) return const SizedBox();
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: controller.images.map((file) {
+        return Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.grey),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.file(
+                  file,
+                  fit: BoxFit.cover,
+                  width: 100,
+                  height: 100,
+                ),
+              ),
+            ),
+            Positioned(
+              top: -8,
+              right: -8,
+              child: GestureDetector(
+                onTap: () => controller.images.remove(file),
+                child: Container(
+                  decoration: const BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.red,
+                  ),
+                  padding: const EdgeInsets.all(4),
+                  child: const Icon(Icons.close, size: 16, color: Colors.white),
+                ),
+              ),
+            ),
+          ],
+        );
+      }).toList(),
+    );
+  });
 }

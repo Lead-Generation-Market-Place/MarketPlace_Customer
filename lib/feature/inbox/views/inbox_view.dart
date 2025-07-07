@@ -13,7 +13,26 @@ class InboxView extends GetView<InboxController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(actions: [_buildAppBarButtons(controller, context)]),
+      appBar: AppBar(
+        title: Obx(() {
+          if (controller.isSearchActive.value) {
+            return TextField(
+              autofocus: true,
+              decoration: const InputDecoration(
+                hintText: 'Search conversations...',
+                border: InputBorder.none,
+                hintStyle: TextStyle(color: Colors.white, fontSize: 16),
+              ),
+              onChanged: (val) => controller.searchText.value = val,
+              style: Theme.of(
+                context,
+              ).textTheme.titleMedium!.copyWith(color: Colors.white),
+            );
+          }
+          return const Text('Inbox');
+        }),
+        actions: [_buildAppBarButtons(controller, context)],
+      ),
       bottomNavigationBar: BottomNavbar(),
       body: Obx(() => _buildConversationsList(controller, context)),
       floatingActionButton: FloatingActionButton.extended(
@@ -32,23 +51,24 @@ Widget _buildConversationsList(
     return const Center(child: CircularProgressIndicator.adaptive());
   }
 
-  if (controller.conversations.isEmpty) {
+  final conversations = controller.filteredConversations;
+  if (conversations.isEmpty) {
     return const Center(child: Text("No Data Exists"));
   }
 
   return ListView.separated(
     padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
-    itemCount: controller.conversations.length,
+    itemCount: conversations.length,
     separatorBuilder: (_, __) => const Divider(height: 1, color: Colors.grey),
     itemBuilder: (context, index) {
-      final professional = controller.conversations[index]['professional'];
-      final customer = controller.conversations[index]['customer'];
+      final professional = conversations[index]['professional'];
+      final customer = conversations[index]['customer'];
       return ListTile(
         onTap: () => Get.toNamed(
           Routes.singleChatView,
           arguments: {
-            'senderId': controller.conversations[index]['professional_id'],
-            'conversationId': controller.conversations[index]['id'],
+            'senderId': conversations[index]['professional_id'],
+            'conversationId': conversations[index]['id'],
           },
         ),
         leading: ClipOval(
@@ -88,9 +108,7 @@ Widget _buildConversationsList(
         contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         trailing: Text(
-          timeago.format(
-            DateTime.parse(controller.conversations[index]['created_at']),
-          ),
+          timeago.format(DateTime.parse(conversations[index]['created_at'])),
         ),
       );
     },
@@ -109,8 +127,21 @@ Widget _buildAppBarButtons(InboxController controller, BuildContext context) {
           shape: BoxShape.circle,
         ),
         child: InkWell(
-          onTap: () => print('Search Clicked'),
-          child: const Icon(Icons.search_outlined),
+          onTap: () {
+            if (controller.isSearchActive.value) {
+              controller.isSearchActive.value = false;
+              controller.searchText.value = '';
+            } else {
+              controller.isSearchActive.value = true;
+            }
+          },
+          child: Obx(
+            () => Icon(
+              controller.isSearchActive.value
+                  ? Icons.close
+                  : Icons.search_outlined,
+            ),
+          ),
         ),
       ),
       Container(

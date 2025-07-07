@@ -8,6 +8,30 @@ class InboxController extends GetxController {
       <Map<String, dynamic>>[].obs;
   final RxBool isLoading = false.obs;
   final SupabaseClient _client = Supabase.instance.client;
+  final RxBool isSearchingInConversation = false.obs;
+
+  // Search-related observables
+  final RxBool isSearchActive = false.obs;
+  final RxString searchText = ''.obs;
+
+  // Filtered conversations based on search
+  List<Map<String, dynamic>> get filteredConversations {
+    if (!isSearchActive.value || searchText.value.isEmpty) {
+      return conversations;
+    }
+    final query = searchText.value.toLowerCase();
+    return conversations.where((conv) {
+      final professional = conv['professional'];
+      final customer = conv['customer'];
+      final professionalName = (professional?['username'] ?? '')
+          .toString()
+          .toLowerCase();
+      final customerName = (customer?['username'] ?? '')
+          .toString()
+          .toLowerCase();
+      return professionalName.contains(query) || customerName.contains(query);
+    }).toList();
+  }
 
   @override
   void onInit() {
@@ -31,7 +55,9 @@ class InboxController extends GetxController {
       customer:users_profiles!conversations_customer_id_fkey(*),
       professional:users_profiles!conversations_professional_id_fkey(*)
     ''')
-          .eq('customer_id', currentUser.id)
+          .or(
+            'customer_id.eq.${currentUser.id},professional_id.eq.${currentUser.id}',
+          )
           .order('created_at', ascending: false);
 
       conversations.value = List<Map<String, dynamic>>.from(response);
