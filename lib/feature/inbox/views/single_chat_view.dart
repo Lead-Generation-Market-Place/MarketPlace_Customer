@@ -51,71 +51,86 @@ class _MessagesList extends StatelessWidget {
           return const Center(child: Text('No messages yet.'));
         }
         final messages = snapshot.data!;
-        return ListView.builder(
-          reverse: true,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          itemCount: messages.length,
-          itemBuilder: (context, index) {
-            final msg = messages[index];
-            final date = DateTime.parse(msg['sent_at']);
-            final sentAt = timeago.format(date);
-            final isMe = msg['sender_id'] == controller.myUserId;
+        return Stack(
+          children: [
+            ListView.builder(
+              reverse: true,
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              itemCount: messages.length,
+              itemBuilder: (context, index) {
+                final msg = messages[index];
+                final date = DateTime.parse(msg['sent_at']);
+                final sentAt = timeago.format(date);
+                final isMe = msg['sender_id'] == controller.myUserId;
 
-            return Align(
-              alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-              child: Container(
-                margin: const EdgeInsets.symmetric(vertical: 4),
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: isMe ? Colors.blue : Colors.grey[300],
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  crossAxisAlignment: isMe
-                      ? CrossAxisAlignment.end
-                      : CrossAxisAlignment.start,
-                  children: [
-                    if (msg['file_url'] != null &&
-                        msg['file_url'].toString().toLowerCase() != 'null')
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 6),
-                        child: CachedNetworkImage(
-                          width: 180,
-                          progressIndicatorBuilder: (context, url, progress) {
-                            return LinearProgressIndicator(
-                              value: progress.progress,
-                              minHeight: 4,
-                            );
-                          },
-                          imageUrl: msg['file_url'],
+                return Align(
+                  alignment: isMe
+                      ? Alignment.centerRight
+                      : Alignment.centerLeft,
+                  child: Container(
+                    margin: const EdgeInsets.symmetric(vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isMe ? Colors.blue : Colors.grey[300],
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: isMe
+                          ? CrossAxisAlignment.end
+                          : CrossAxisAlignment.start,
+                      children: [
+                        if (msg['file_url'] != null &&
+                            msg['file_url'].toString().toLowerCase() != 'null')
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: CachedNetworkImage(
+                              width: 180,
+                              progressIndicatorBuilder:
+                                  (context, url, progress) {
+                                    return LinearProgressIndicator(
+                                      value: progress.progress,
+                                      minHeight: 4,
+                                    );
+                                  },
+                              imageUrl: msg['file_url'],
 
-                          errorWidget: (context, url, error) =>
-                              Icon(Icons.error_outline, color: Colors.red),
+                              errorWidget: (context, url, error) =>
+                                  Icon(Icons.error_outline, color: Colors.red),
+                            ),
+                          ),
+                        Text(
+                          msg['message'] ?? '',
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: isMe ? Colors.white : Colors.black,
+                          ),
                         ),
-                      ),
-                    Text(
-                      msg['message'] ?? '',
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: isMe ? Colors.white : Colors.black,
-                      ),
+                        const SizedBox(height: 2),
+                        Text(
+                          sentAt,
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: isMe ? Colors.white : Colors.black,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      sentAt,
-                      style: TextStyle(
-                        fontSize: 10,
-                        color: isMe ? Colors.white : Colors.black,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                );
+              },
+            ),
+            Positioned(
+              bottom: 0,
+              child: Obx(
+                () => controller.isOtherUserTyping.value
+                    ? _buildTypingIndicator(controller)
+                    : SizedBox.shrink(),
               ),
-            );
-          },
+            ),
+          ],
         );
       },
     );
@@ -147,6 +162,10 @@ class _SendMessageInputState extends State<_SendMessageInput> {
         children: [
           Expanded(
             child: TextField(
+              onChanged: (value) {
+                // Only send typing events if text is not empty
+                controller.handleTyping(value.isNotEmpty);
+              },
               controller: messageController,
               decoration: InputDecoration(
                 prefixIcon: InkWell(
@@ -178,6 +197,7 @@ class _SendMessageInputState extends State<_SendMessageInput> {
                       if (text.isNotEmpty || controller.images.isNotEmpty) {
                         await controller.sendMessage(text);
                         messageController.clear();
+                        controller.handleTyping(false);
                       }
                     },
                   );
@@ -327,5 +347,17 @@ Widget _buildCallOrReviewSection(
         ),
       ],
     ),
+  );
+}
+
+Widget _buildTypingIndicator(SingleChatController controller) {
+  return Container(
+    padding: EdgeInsets.all(8),
+    margin: EdgeInsets.all(8),
+    decoration: BoxDecoration(
+      color: Colors.grey[200],
+      borderRadius: BorderRadius.circular(16),
+    ),
+    child: Text('${controller.professional['username']} is typing...'),
   );
 }

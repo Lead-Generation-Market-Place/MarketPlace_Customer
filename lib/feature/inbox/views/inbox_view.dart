@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:us_connector/core/constants/file_urls.dart';
 import 'package:us_connector/core/routes/routes.dart';
@@ -61,19 +62,29 @@ Widget _buildConversationsList(
     itemCount: conversations.length,
     separatorBuilder: (_, __) => const Divider(height: 1, color: Colors.grey),
     itemBuilder: (context, index) {
-      final professional = conversations[index]['professional'];
-      final customer = conversations[index]['customer'];
-      final profilePic = professional['profile_picture_url'];
+      final conversation = conversations[index];
+      final currentUserId = Supabase.instance.client.auth.currentUser?.id;
+
+      // Determine the other user based on current login
+      final isUserProfessional =
+          currentUserId == conversation['professional_id'];
+      final otherUser = isUserProfessional
+          ? conversation['customer']
+          : conversation['professional'];
+      final profilePic = otherUser['profile_picture_url'];
       final imageUrl = (profilePic != null && profilePic.toString().isNotEmpty)
           ? '${FileUrls.userProfilePicture}$profilePic'
           : null;
+
       return ListTile(
         onTap: () => Get.toNamed(
           Routes.singleChatView,
           arguments: {
-            'professional': conversations[index]['professional'],
-            'senderId': conversations[index]['professional_id'],
-            'conversationId': conversations[index]['id'],
+            'professional': conversation['professional'],
+            'senderId': isUserProfessional
+                ? conversation['customer_id']
+                : conversation['professional_id'],
+            'conversationId': conversation['id'],
           },
         ),
         leading: ClipOval(
@@ -99,18 +110,17 @@ Widget _buildConversationsList(
               : CircleAvatar(child: const Icon(Icons.person, size: 32)),
         ),
         title: Text(
-          professional['username'] ?? 'No Name',
+          otherUser['username'] ?? 'No Name',
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
             color: Colors.black,
             fontWeight: FontWeight.bold,
           ),
         ),
         subtitle: Text(
-          customer['username'] != null
-              ? 'Chat with ${customer['username']}'
-              : '',
+          'Tap to continue conversation',
           style: Theme.of(context).textTheme.bodySmall,
         ),
+
         contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         trailing: Text(
