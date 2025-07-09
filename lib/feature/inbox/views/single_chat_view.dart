@@ -1,10 +1,13 @@
 import 'dart:io';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:us_connector/feature/inbox/controller/single_chat_controller.dart';
-import 'package:intl/intl.dart';
+import 'package:us_connector/feature/inbox/widgets/phone_dial_popup.dart';
+import 'package:us_connector/feature/inbox/widgets/send_review.dart';
+import 'package:timeago/timeago.dart' as timeago;
 
 class SingleChatView extends GetView<SingleChatController> {
   const SingleChatView({super.key});
@@ -12,11 +15,16 @@ class SingleChatView extends GetView<SingleChatController> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Chat")),
+      appBar: AppBar(
+        actions: [_buildActions(context)],
+        title: Text(controller.professional['username']),
+      ),
       body: SafeArea(
         child: Column(
           children: [
+            _buildCallOrReviewSection(controller, context),
             Expanded(child: _MessagesList()),
+
             _buildPickedImages(),
             _SendMessageInput(),
           ],
@@ -50,7 +58,7 @@ class _MessagesList extends StatelessWidget {
           itemBuilder: (context, index) {
             final msg = messages[index];
             final date = DateTime.parse(msg['sent_at']);
-            final sentAt = DateFormat.Hm().format(date);
+            final sentAt = timeago.format(date);
             final isMe = msg['sender_id'] == controller.myUserId;
 
             return Align(
@@ -98,7 +106,10 @@ class _MessagesList extends StatelessWidget {
                     const SizedBox(height: 2),
                     Text(
                       sentAt,
-                      style: TextStyle(fontSize: 10, color: Colors.grey[100]),
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: isMe ? Colors.white : Colors.black,
+                      ),
                     ),
                   ],
                 ),
@@ -248,4 +259,73 @@ Widget _buildPickedImages() {
       }).toList(),
     );
   });
+}
+
+Widget _buildActions(BuildContext context) {
+  return PopupMenuButton<String>(
+    icon: Icon(Icons.more_vert),
+    onSelected: (String value) {
+      switch (value) {
+        case 'see_profile':
+          break;
+        case 'share_pro':
+          break;
+        case 'book_time':
+          break;
+        case 'decline_pro':
+          break;
+      }
+    },
+    itemBuilder: (BuildContext context) => [
+      const PopupMenuItem(value: 'see_profile', child: Text('See profile')),
+      const PopupMenuItem(value: 'share_pro', child: Text('Share pro')),
+      const PopupMenuItem(value: 'book_time', child: Text('Book a time')),
+      const PopupMenuItem(
+        value: 'decline_pro',
+        child: Text('Decline pro', style: TextStyle(color: Colors.red)),
+      ),
+    ],
+  );
+}
+
+Widget _buildCallOrReviewSection(
+  SingleChatController controller,
+  BuildContext context,
+) {
+  return ListTile(
+    tileColor: Colors.grey[200],
+    trailing: Icon(Icons.arrow_forward_ios_sharp),
+    title: Text(controller.professional['username']),
+    subtitle: Row(
+      spacing: 10,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ElevatedButton.icon(
+          icon: Icon(Icons.call_outlined),
+          onPressed: () {
+            showCupertinoDialog(
+              context: context,
+              builder: (context) => PhoneDialPopup(
+                phoneNumber: controller.professional['phone_number'] ?? "",
+                onDial: () {
+                  controller.dialPhoneNumber(
+                    controller.professional['phone_number'] ?? "",
+                  );
+                },
+                onCancel: () {
+                  Navigator.of(context).pop();
+                },
+              ),
+            );
+          },
+          label: Text('Call pro'),
+        ),
+        ElevatedButton.icon(
+          icon: Icon(Icons.star_outline),
+          onPressed: () => buildSendReview(context),
+          label: Text('Review pro'),
+        ),
+      ],
+    ),
+  );
 }

@@ -53,6 +53,8 @@ dependencies:
   local_auth: ^2.3.0
   shimmer: ^3.0.0
   timeago: ^3.7.1
+  intl: ^0.20.2
+  url_launcher: ^6.3.1
 
 
 

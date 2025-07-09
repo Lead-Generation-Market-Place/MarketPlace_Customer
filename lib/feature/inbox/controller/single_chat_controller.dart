@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SingleChatController extends GetxController {
   // Images selected for sending
@@ -13,6 +14,7 @@ class SingleChatController extends GetxController {
   // Arguments from previous screen
   final RxString otherUserId = ''.obs; // The user you are chatting with
   final RxString conversationId = ''.obs;
+  final RxMap professional = <String, dynamic>{}.obs;
 
   // Local state
   late final String myUserId;
@@ -25,6 +27,7 @@ class SingleChatController extends GetxController {
     final args = Get.arguments;
     otherUserId.value = args['senderId'] ?? '';
     conversationId.value = args['conversationId'] ?? '';
+    professional.value = args['professional'] ?? {};
     myUserId = _client.auth.currentUser?.id ?? '';
 
     if (conversationId.isEmpty || myUserId.isEmpty) {
@@ -74,7 +77,6 @@ class SingleChatController extends GetxController {
           'sender_id': myUserId,
           'message': '', // no text, just image
           'file_url': imageUrl,
-          'sent_at': DateTime.now().toIso8601String(),
         };
 
         final response = await _client
@@ -93,7 +95,6 @@ class SingleChatController extends GetxController {
           'sender_id': myUserId,
           'message': message.trim(),
           'file_url': null,
-          'sent_at': DateTime.now().toIso8601String(),
         };
 
         final response = await _client
@@ -111,6 +112,16 @@ class SingleChatController extends GetxController {
       Get.snackbar('Error', 'Failed to send message: $e');
     } finally {
       isMessageSending.value = false;
+    }
+  }
+
+  void dialPhoneNumber(String phoneNumber) async {
+    final Uri launchUri = Uri(scheme: 'tel', path: phoneNumber);
+
+    if (await canLaunchUrl(launchUri)) {
+      await launchUrl(launchUri);
+    } else {
+      Get.snackbar('Phone Dial', "Could Not Dial Phone to that phone number");
     }
   }
 }

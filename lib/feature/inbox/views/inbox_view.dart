@@ -63,33 +63,40 @@ Widget _buildConversationsList(
     itemBuilder: (context, index) {
       final professional = conversations[index]['professional'];
       final customer = conversations[index]['customer'];
+      final profilePic = professional['profile_picture_url'];
+      final imageUrl = (profilePic != null && profilePic.toString().isNotEmpty)
+          ? '${FileUrls.userProfilePicture}$profilePic'
+          : null;
       return ListTile(
         onTap: () => Get.toNamed(
           Routes.singleChatView,
           arguments: {
+            'professional': conversations[index]['professional'],
             'senderId': conversations[index]['professional_id'],
             'conversationId': conversations[index]['id'],
           },
         ),
         leading: ClipOval(
-          child: CachedNetworkImage(
-            fit: BoxFit.cover,
-            width: 48,
-            height: 48,
-            imageUrl:
-                '${FileUrls.userProfilePicture}${professional['profile_picture_url'] ?? ''}',
-            progressIndicatorBuilder: (context, url, progress) => SizedBox(
-              width: 24,
-              height: 24,
-              child: CircularProgressIndicator(
-                value: progress.progress,
-                color: Colors.deepPurple,
-                strokeWidth: 2,
-              ),
-            ),
-            errorWidget: (context, url, error) =>
-                CircleAvatar(child: const Icon(Icons.person, size: 32)),
-          ),
+          child: imageUrl != null
+              ? CachedNetworkImage(
+                  fit: BoxFit.cover,
+                  width: 48,
+                  height: 48,
+                  imageUrl: imageUrl,
+                  progressIndicatorBuilder: (context, url, progress) =>
+                      SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          value: progress.progress,
+                          color: Colors.deepPurple,
+                          strokeWidth: 2,
+                        ),
+                      ),
+                  errorWidget: (context, url, error) =>
+                      CircleAvatar(child: const Icon(Icons.person, size: 32)),
+                )
+              : CircleAvatar(child: const Icon(Icons.person, size: 32)),
         ),
         title: Text(
           professional['username'] ?? 'No Name',
@@ -104,7 +111,6 @@ Widget _buildConversationsList(
               : '',
           style: Theme.of(context).textTheme.bodySmall,
         ),
-
         contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
         trailing: Text(
@@ -126,7 +132,7 @@ Widget _buildAppBarButtons(InboxController controller, BuildContext context) {
           border: Border.all(color: Theme.of(context).highlightColor, width: 2),
           shape: BoxShape.circle,
         ),
-        child: InkWell(
+        child: GestureDetector(
           onTap: () {
             if (controller.isSearchActive.value) {
               controller.isSearchActive.value = false;
