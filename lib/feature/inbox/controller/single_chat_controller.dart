@@ -17,7 +17,8 @@ class SingleChatController extends GetxController {
   // Arguments from previous screen
   final RxString otherUserId = ''.obs;
   final RxString conversationId = ''.obs;
-  final RxMap professional = <String, dynamic>{}.obs;
+  final RxMap receiver = <String, dynamic>{}.obs;
+  final RxMap sender = <String, dynamic>{}.obs;
 
   // Local state
   late final String myUserId;
@@ -37,7 +38,8 @@ class SingleChatController extends GetxController {
     final args = Get.arguments;
     otherUserId.value = args['senderId'] ?? '';
     conversationId.value = args['conversationId'] ?? '';
-    professional.value = args['professional'] ?? {};
+    receiver.value = args['receiver'] ?? {};
+    sender.value = args['sender'] ?? {};
     myUserId = _client.auth.currentUser?.id ?? '';
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeRealtime();
@@ -208,6 +210,21 @@ class SingleChatController extends GetxController {
       await launchUrl(launchUri);
     } else {
       Get.snackbar('Error', "Couldn't dial phone number");
+    }
+  }
+
+  void sendSms(String phoneNumber) async {
+    Get.snackbar(
+      'Opening...',
+      'Opening an SMS App',
+      snackPosition: SnackPosition.BOTTOM,
+      showProgressIndicator: true,
+    );
+    final Uri launchUri = Uri(scheme: 'sms', path: phoneNumber);
+    if (await canLaunchUrl(launchUri)) {
+      await launchUrl(launchUri);
+    } else {
+      Get.snackbar('Error', "Couldn't SMS TO $phoneNumber phone number");
     }
   }
 }

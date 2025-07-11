@@ -77,16 +77,19 @@ Widget _buildConversationsList(
           : null;
 
       return ListTile(
-        onTap: () => Get.toNamed(
-          Routes.singleChatView,
-          arguments: {
-            'professional': conversation['professional'],
-            'senderId': isUserProfessional
-                ? conversation['customer_id']
-                : conversation['professional_id'],
-            'conversationId': conversation['id'],
-          },
-        ),
+        onTap: () {
+          Get.toNamed(
+            Routes.singleChatView,
+            arguments: {
+              'receiver': conversation['professional'],
+              'senderId': isUserProfessional
+                  ? conversation['customer_id']
+                  : conversation['professional_id'],
+              'conversationId': conversation['id'],
+              'sender': conversation['customer'],
+            },
+          );
+        },
         leading: ClipOval(
           child: imageUrl != null
               ? CachedNetworkImage(
