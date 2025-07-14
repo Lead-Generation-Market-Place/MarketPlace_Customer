@@ -43,42 +43,37 @@ class _MessagesList extends StatelessWidget {
   Widget build(BuildContext context) {
     final controller = Get.find<SingleChatController>();
 
-    return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: controller.messagesStream,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final messages = snapshot.data ?? [];
-        if (messages.isEmpty) {
-          return const Center(child: Text('No messages yet.'));
-        }
-
-        return Stack(
-          children: [
-            ListView.builder(
-              reverse: true,
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-              itemCount: messages.length,
-              itemBuilder: (context, index) {
-                final msg = messages[index];
-                return _buildMessageTile(msg, controller);
-              },
+    return Obx(() {
+      if (controller.isLoading.value) {
+        return Center(child: CircularProgressIndicator.adaptive());
+      }
+      if (controller.messages.isEmpty) {
+        return Center(child: Text('No Messages'));
+      }
+      return Stack(
+        children: [
+          ListView.builder(
+            controller: controller.scrollController,
+            reverse: true,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            itemCount: controller.messages.length,
+            itemBuilder: (context, index) {
+              final msg = controller.messages[index];
+              return _buildMessageTile(msg, controller);
+            },
+          ),
+          Positioned(
+            bottom: 0,
+            left: 16,
+            child: Obx(
+              () => controller.isOtherUserTyping.value
+                  ? _buildTypingIndicator()
+                  : const SizedBox.shrink(),
             ),
-            Positioned(
-              bottom: 0,
-              left: 16,
-              child: Obx(
-                () => controller.isOtherUserTyping.value
-                    ? _buildTypingIndicator()
-                    : const SizedBox.shrink(),
-              ),
-            ),
-          ],
-        );
-      },
-    );
+          ),
+        ],
+      );
+    });
   }
 
   Widget _buildMessageTile(
@@ -100,7 +95,9 @@ class _MessagesList extends StatelessWidget {
       backgroundImage:
           receiverAvatarUrl != null &&
               receiverAvatarUrl.toString().toLowerCase() != 'null'
-          ? NetworkImage(FileUrls.userProfilePicture + receiverAvatarUrl)
+          ? CachedNetworkImageProvider(
+              FileUrls.userProfilePicture + receiverAvatarUrl,
+            )
           : null,
       child:
           receiverAvatarUrl == null ||
@@ -117,7 +114,9 @@ class _MessagesList extends StatelessWidget {
       backgroundImage:
           senderAvatarUrl != null &&
               senderAvatarUrl.toString().toLowerCase() != 'null'
-          ? NetworkImage(FileUrls.userProfilePicture + senderAvatarUrl)
+          ? CachedNetworkImageProvider(
+              FileUrls.userProfilePicture + senderAvatarUrl,
+            )
           : null,
       child:
           senderAvatarUrl == null ||

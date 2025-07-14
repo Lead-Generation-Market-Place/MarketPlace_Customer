@@ -33,8 +33,23 @@ class SingleChatController extends GetxController {
   bool _lastTypingState = false;
   bool _isChannelInitialized = false;
 
+  //Pagination states
+  final int _pageSize = 15;
+  int _currentPage = 0;
+  bool _hasMore = true;
+  bool _isFetching = false;
+
+  //Scrolls
+  ScrollController scrollController = ScrollController();
+
   @override
   void onInit() {
+    scrollController.addListener(() {
+      if (scrollController.position.pixels >=
+          scrollController.position.maxScrollExtent - 100) {
+        fetchMessages();
+      }
+    });
     final args = Get.arguments;
     otherUserId.value = args['senderId'] ?? '';
     conversationId.value = args['conversationId'] ?? '';
@@ -44,6 +59,7 @@ class SingleChatController extends GetxController {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initializeRealtime();
     });
+    fetchMessages(isInitial: true);
     if (conversationId.isEmpty || myUserId.isEmpty) {
       Get.snackbar('Error', 'Missing chat information');
     } else {
@@ -140,13 +156,41 @@ class SingleChatController extends GetxController {
     }
   }
 
-  Stream<List<Map<String, dynamic>>> get messagesStream {
-    return _client
-        .from('messages')
-        .stream(primaryKey: ['id'])
-        .eq('conversation_id', conversationId.value)
-        .order('sent_at', ascending: false)
-        .map((event) => List<Map<String, dynamic>>.from(event));
+  Future<void> fetchMessages({bool isInitial = false}) async {
+    if (_isFetching || !_hasMore) return;
+
+    _isFetching = true;
+    if (isInitial) {
+      isLoading.value = true;
+      messages.clear(); // clear previous messages
+      _currentPage = 0;
+      _hasMore = true;
+    }
+
+    final from = _currentPage * _pageSize;
+    final to = from + _pageSize - 1;
+
+    try {
+      final response = await _client
+          .from('messages')
+          .select()
+          .eq('conversation_id', conversationId.value)
+          .order('sent_at', ascending: false)
+          .range(from, to);
+
+      final List<Map<String, dynamic>> newMessages =
+          List<Map<String, dynamic>>.from(response);
+
+      if (newMessages.length < _pageSize) _hasMore = false;
+
+      messages.addAll(newMessages); // add to the bottom of the list
+      _currentPage++;
+    } catch (e) {
+      print("Failed to fetch messages: $e");
+    } finally {
+      isLoading.value = false;
+      _isFetching = false;
+    }
   }
 
   Future<void> sendMessage(String message) async {

@@ -132,7 +132,7 @@ class MyApp extends StatelessWidget {
       routingCallback: (routing) {
         if (routing?.current != null) {
           debugPrint('Navigation: ${routing?.previous} -> ${routing?.current}');
-          _trackScreenView(routing!.current!);
+          _trackScreenView(routing!.current);
         }
       },
     );
