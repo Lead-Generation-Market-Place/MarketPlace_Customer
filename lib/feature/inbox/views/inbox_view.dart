@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import 'package:us_connector/core/constants/file_urls.dart';
+import 'package:us_connector/core/constants/screen_size.dart';
 import 'package:us_connector/core/routes/routes.dart';
 import 'package:us_connector/core/widgets/bottom_navbar.dart';
 import 'package:us_connector/feature/inbox/controller/inbox_controller.dart';
@@ -126,9 +127,7 @@ Widget _buildConversationsList(
 
         contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        trailing: Text(
-          timeago.format(DateTime.parse(conversations[index]['created_at'])),
-        ),
+        trailing: Obx(() => _buildIsUserOnline(controller, index, context)),
       );
     },
   );
@@ -178,4 +177,27 @@ Widget _buildAppBarButtons(InboxController controller, BuildContext context) {
       ),
     ],
   );
+}
+
+Widget _buildIsUserOnline(
+  InboxController controller,
+  int index,
+  BuildContext context,
+) {
+  //will be used later if the last online accessible
+  // String created_at = controller.conversations[index]['created_at'];
+  String userId = controller.conversations[index]['professional_id'];
+
+  final onlineStamp = CircleAvatar(
+    backgroundColor: Colors.green,
+    radius: ScreenSize().getHeight(context) / 150,
+  );
+  //will be used later upon request
+  // final lastOnline = CircleAvatar(
+  //   backgroundColor: Colors.grey,
+  //   radius: ScreenSize().getHeight(context) / 150,
+  // );
+  return controller.onlineUsers.contains(userId)
+      ? onlineStamp
+      : SizedBox.shrink();
 }

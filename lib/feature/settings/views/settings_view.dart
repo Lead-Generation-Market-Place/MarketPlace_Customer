@@ -366,7 +366,8 @@ class SettingsView extends GetView<SettingsController> {
                           TextButton(
                             child: const Text('Yes'),
                             onPressed: () {
-                              supabase.auth.signOut();
+                              supabase.auth
+                                  .signOut(); //Untrack the user if loged out
                               Get.offAllNamed(Routes.login);
                             },
                           ),

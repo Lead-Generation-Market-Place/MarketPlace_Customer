@@ -40,8 +40,6 @@ class AuthController extends GetxController {
 
   RxString authUserId = ''.obs;
 
-
-
   Future<void> loadUserData() async {
     try {
       final session = supabase.auth.currentSession;

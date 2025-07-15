@@ -240,6 +240,8 @@ class SingleChatController extends GetxController {
     }
   }
 
+  Future sendReview(String reviewMessage, double ratings) async {}
+
   @override
   void onClose() {
     _typingTimer?.cancel();

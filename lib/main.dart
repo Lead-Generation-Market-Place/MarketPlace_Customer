@@ -6,7 +6,6 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import 'core/controllers/theme_controller.dart';
 import 'core/localization/localization.dart';
 import 'core/routes/routes.dart' hide RouteObserver;
@@ -73,6 +72,8 @@ void main() {
     () async {
       await _initializeApp();
       debugPrint('Starting app...');
+      debugPrint('Initialized the AppSessionService..');
+
       runApp(const MyApp());
     },
     (error, stackTrace) {

@@ -2,7 +2,6 @@ import 'dart:math';
 
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
-import 'package:logger/web.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:us_connector/core/components/question_component.dart';
 import 'package:us_connector/core/routes/routes.dart';
