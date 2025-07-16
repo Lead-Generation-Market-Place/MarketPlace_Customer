@@ -6,6 +6,7 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'package:us_connector/core/constants/file_urls.dart';
 import 'package:us_connector/core/constants/screen_size.dart';
 import 'package:us_connector/core/routes/routes.dart';
+import 'package:us_connector/core/services/app_presence_service.dart';
 import 'package:us_connector/core/widgets/bottom_navbar.dart';
 import 'package:us_connector/feature/inbox/controller/inbox_controller.dart';
 
@@ -197,7 +198,7 @@ Widget _buildIsUserOnline(
   //   backgroundColor: Colors.grey,
   //   radius: ScreenSize().getHeight(context) / 150,
   // );
-  return controller.onlineUsers.contains(userId)
+  return AppPresenceService.to.onlineUsers.contains(userId)
       ? onlineStamp
       : SizedBox.shrink();
 }

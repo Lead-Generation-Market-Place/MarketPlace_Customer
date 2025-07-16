@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'package:logger/web.dart';
 import 'package:us_connector/core/constants/file_urls.dart';
 import 'package:us_connector/core/routes/routes.dart';
+import 'package:us_connector/core/services/app_presence_service.dart';
 import 'package:us_connector/feature/auth/controllers/auth_controller.dart';
 import 'package:us_connector/core/widgets/image_picker.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -366,8 +367,10 @@ class SettingsView extends GetView<SettingsController> {
                           TextButton(
                             child: const Text('Yes'),
                             onPressed: () {
-                              supabase.auth
-                                  .signOut(); //Untrack the user if loged out
+                              supabase.auth.signOut();
+
+                              //Untrack the user if loged out
+
                               Get.offAllNamed(Routes.login);
                             },
                           ),

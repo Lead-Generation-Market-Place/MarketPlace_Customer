@@ -7,6 +7,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:us_connector/core/services/app_presence_service.dart';
 import 'package:us_connector/core/widgets/custom_flutter_toast.dart';
 
 import 'package:us_connector/main.dart';
@@ -115,7 +116,6 @@ class AuthController extends GetxController {
         name.value = userProfile[0]['username'] ?? response.user?.email ?? '';
         email.value = response.user?.email ?? '';
       }
-
       Get.offAllNamed(Routes.home);
       emailController.value = TextEditingValue.empty;
       passwordController.value = TextEditingValue.empty;
@@ -240,7 +240,6 @@ class AuthController extends GetxController {
       if (idToken == null) {
         throw 'No ID Token found.';
       }
-
       Get.offAllNamed(Routes.home);
     } catch (e) {
       Fluttertoast.showToast(
@@ -267,7 +266,6 @@ class AuthController extends GetxController {
       if (!response) {
         throw 'Apple sign in failed';
       }
-
       Get.offAllNamed(Routes.home);
     } catch (e) {
       Fluttertoast.showToast(

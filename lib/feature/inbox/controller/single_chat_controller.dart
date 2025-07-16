@@ -23,6 +23,8 @@ class SingleChatController extends GetxController {
   // Local state
   late final String myUserId;
   final RxBool isLoading = false.obs;
+  final RxBool isReviewLoading = false.obs;
+  RxMap review = {}.obs;
   final RxBool isMessageSending = false.obs;
   final RxList<Map<String, dynamic>> messages = <Map<String, dynamic>>[].obs;
   final RxBool isOtherUserTyping = false.obs;
@@ -71,6 +73,7 @@ class SingleChatController extends GetxController {
       });
       _isChannelInitialized = true;
     }
+    getReview();
     super.onInit();
   }
 
@@ -240,7 +243,56 @@ class SingleChatController extends GetxController {
     }
   }
 
-  Future sendReview(String reviewMessage, double ratings) async {}
+  //First Get User review if exists
+  Future getReview() async {
+    try {
+      isReviewLoading.value = true;
+
+      final response = await _client
+          .from('reviews')
+          .select('rating,review_text')
+          .eq('reviewerUserId', myUserId)
+          .eq('providerUser_id', otherUserId)
+          .maybeSingle();
+
+      //if review exists we will update it else adding a new review
+      if (response != null) {
+        review.value = {
+          'rating': response['rating'],
+          'review_text': response['review_text'],
+        };
+      } else {
+        review.value = {};
+      }
+    } catch (e) {
+      print(e);
+      Get.snackbar('Reviews', "Review Error Occured");
+    } finally {
+      isReviewLoading.value = false;
+    }
+  }
+
+  // Future sendReview(String reviewMessage, double ratings) async {
+  //   try {
+  //     isReviewLoading.value = true;
+
+  //     final response = await _client
+  //         .from('reviews')
+  //         .select('rating,review_text')
+  //         .eq('reviewerUserId', myUserId);
+
+  //     //if review exists we will update it else adding a new review
+  //     if (response.isNotEmpty) {
+  //       print(response);
+  //     } else {
+  //       print('adding new review');
+  //     }
+  //   } catch (e) {
+  //     Get.snackbar('Reviews', "Review Error Occured");
+  //   } finally {
+  //     isReviewLoading.value = false;
+  //   }
+  // }
 
   @override
   void onClose() {

@@ -638,7 +638,7 @@ class _ChatActionSection extends StatelessWidget {
           _ActionButton(
             icon: Icons.star_outline,
             label: 'Review',
-            onPressed: () => buildSendReview(context),
+            onPressed: () => buildSendReview(context, controller),
           ),
           _ActionButton(
             icon: Icons.sms_outlined,

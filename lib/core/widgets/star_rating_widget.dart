@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 class StarRatingWidget extends StatefulWidget {
   final int maxStars;
-  final double initialRating;
-  final Function(double) onRatingChanged;
+  final int initialRating;
+  final Function(int) onRatingChanged;
 
   const StarRatingWidget({
     Key? key,
@@ -17,7 +17,7 @@ class StarRatingWidget extends StatefulWidget {
 }
 
 class _StarRatingState extends State<StarRatingWidget> {
-  double _currentRating = 0;
+  int _currentRating = 0;
 
   @override
   void initState() {
@@ -33,7 +33,7 @@ class _StarRatingState extends State<StarRatingWidget> {
         return GestureDetector(
           onTap: () {
             setState(() {
-              _currentRating = index + 1.0;
+              _currentRating = index + 1;
               widget.onRatingChanged(_currentRating);
             });
           },

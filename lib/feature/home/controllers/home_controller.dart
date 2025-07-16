@@ -5,6 +5,8 @@ import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:us_connector/core/components/question_component.dart';
 import 'package:us_connector/core/routes/routes.dart';
+import 'package:us_connector/core/services/app_presence_service.dart';
+import 'package:us_connector/feature/inbox/controller/inbox_controller.dart';
 
 class HomeController extends GetxController {
   final supabase = Supabase.instance.client;
@@ -20,6 +22,7 @@ class HomeController extends GetxController {
     super.onInit();
     await fetchServices();
     await _fetchAllPlans();
+    //  AppPresenceService.to.trackPresence();
   }
 
   Future<void> fetchServices() async {
@@ -144,6 +147,7 @@ class HomeController extends GetxController {
   @override
   void onClose() {
     services.clear();
+    AppPresenceService.to.disposePresence();
     super.onClose();
   }
 }

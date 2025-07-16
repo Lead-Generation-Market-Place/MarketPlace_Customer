@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:us_connector/core/services/app_presence_service.dart';
 import 'core/controllers/theme_controller.dart';
 import 'core/localization/localization.dart';
 import 'core/routes/routes.dart' hide RouteObserver;
@@ -42,6 +43,13 @@ Future<void> _initializeApp() async {
     debug: kDebugMode,
   );
 
+  debugPrint('initializing user Presence...');
+  await Get.putAsync<AppPresenceService>(() async {
+    final service = AppPresenceService();
+    await service.init();
+    return service;
+  });
+
   // Shared Preferences
   debugPrint('Initializing SharedPreferences...');
   final prefs = await SharedPreferences.getInstance();
@@ -72,7 +80,6 @@ void main() {
     () async {
       await _initializeApp();
       debugPrint('Starting app...');
-      debugPrint('Initialized the AppSessionService..');
 
       runApp(const MyApp());
     },

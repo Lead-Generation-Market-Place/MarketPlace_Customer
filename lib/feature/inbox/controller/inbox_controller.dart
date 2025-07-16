@@ -15,19 +15,11 @@ class InboxController extends GetxController {
   final RxList<Map<String, dynamic>> conversations =
       <Map<String, dynamic>>[].obs;
 
-  // Realtime presence tracking
-  final RealtimeChannel _presenceChannel = Supabase.instance.client.channel(
-    'online-users',
-  );
-
-  final RxSet<String> onlineUsers = <String>{}.obs;
-
   @override
   void onInit() {
     super.onInit();
     getConversations();
-    _initializePresenceChannel();
-    _startTrackingUser();
+    // _startTrackingUser();
   }
 
   /// Fetches all conversations where the current user is a customer or professional
@@ -80,57 +72,8 @@ class InboxController extends GetxController {
     }).toList();
   }
 
-  /// Initializes and subscribes to presence events
-  void _initializePresenceChannel() {
-    _presenceChannel
-        .onPresenceSync((_) {
-          final presenceState = _presenceChannel.presenceState();
-
-          final updatedOnlineUsers = <String>{};
-          for (final item in presenceState) {
-            for (final presence in item.presences) {
-              final userId = presence.payload['user_id'];
-              if (userId != null) {
-                updatedOnlineUsers.add(userId);
-              }
-            }
-          }
-
-          onlineUsers.value = updatedOnlineUsers;
-          Logger().i("Online users: ${onlineUsers.length}");
-        })
-        .onPresenceJoin((payload) {
-          Logger().i("User joined: ${payload.newPresences}");
-        })
-        .onPresenceLeave((payload) {
-          Logger().i("User left: ${payload.leftPresences}");
-        })
-        .subscribe();
-  }
-
-  /// Sends the current user's presence
-  void _startTrackingUser() {
-    final userId = _client.auth.currentUser?.id;
-    if (userId == null) return;
-
-    _presenceChannel.track({
-      'user_id': userId,
-      'online_at': DateTime.now().toIso8601String(),
-    });
-
-    Logger().d("Presence track sent for user: $userId");
-  }
-
-  /// Gracefully untracks and unsubscribes from the channel
-  void _cleanupPresenceChannel() {
-    _presenceChannel.untrack();
-    _presenceChannel.unsubscribe();
-    Logger().d("Presence channel closed.");
-  }
-
   @override
   void onClose() {
-    _cleanupPresenceChannel();
     super.onClose();
   }
 }
